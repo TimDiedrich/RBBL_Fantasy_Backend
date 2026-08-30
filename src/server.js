@@ -37,14 +37,14 @@ const PORT = process.env.PORT || 3000;
 
 const apiRouter = express.Router();
 
-app.use('/players', playerRoutes);
-app.use('/users', userRoutes);
-app.use('/fantasy_league', fantasyLeagueRoutes);
-app.use('/fantasy_teams', fantasyTeamRoutes);
-app.use('/standings', standingsRoutes);
-app.use('/rosters', rosterRoutes);
-app.use('/real_games', realGamesRoutes);
-app.use('/league_admin_settings', leagueAdminSettings);
+apiRouter.use('/players', playerRoutes);
+apiRouter.use('/users', userRoutes);
+apiRouter.use('/fantasy_league', fantasyLeagueRoutes);
+apiRouter.use('/fantasy_teams', fantasyTeamRoutes);
+apiRouter.use('/standings', standingsRoutes);
+apiRouter.use('/rosters', rosterRoutes);
+apiRouter.use('/real_games', realGamesRoutes);
+apiRouter.use('/league_admin_settings', leagueAdminSettings);
 
 app.use('/api', apiRouter);
 //app.use('/api/v1', apiV1Router);
