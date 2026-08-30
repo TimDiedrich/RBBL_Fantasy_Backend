@@ -77,3 +77,6 @@ JWT_SECRET=your_super_secret_jwt_key_here
 psql -U postgres -d fantasydb -f path/to/schema.sql
 psql -U postgres -d fantasydb -f path/to/seed.sql
 ```
+
+- [Backend System Architecture & Design](./ARCHITECTURE.md)
+- [Contribution Guidelines](./CONTRIBUTING.md)
