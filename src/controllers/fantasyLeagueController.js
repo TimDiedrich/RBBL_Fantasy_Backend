@@ -4,6 +4,9 @@ const ApiError = require('../utils/ApiError');
 
 const crypto = require('crypto');
 
+const path = require('path');
+const fs = require('fs/promises');
+
 // TODO extract to utils file?
 const generateInviteCode = () => {
     return crypto.randomBytes(4).toString('hex').toUpperCase();
@@ -61,8 +64,12 @@ const createLeague = asyncHandler(async(req, res) => {
             FROM players
             WHERE is_active = TRUE;
         `;
-
         const { playerRows } = await client.query(copyPlayerDateQuery, [newLeague.id]);
+
+        const filePath = path.join(__dirname, '../config/SQL/seeds/07_edit_female_players.sql')
+        const adjust_gender_query = await fs.readFile(filePath, 'utf8');
+
+        await client.query(adjust_gender_query);
 
         await client.query('COMMIT');
 
