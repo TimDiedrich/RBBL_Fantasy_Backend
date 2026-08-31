@@ -2,9 +2,7 @@ UPDATE fantasy_players
 SET
     gender = 'FEMALE',
 	bonus = 1.5
-WHERE
-    league_id = 6
-	AND player_name IN (
+WHERE player_name IN (
         'Amber Heijkamp',
 		'Annika Sonnleitner',
 		'Dagmar van Hinte',

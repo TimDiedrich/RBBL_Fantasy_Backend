@@ -27,3 +27,6 @@ INSERT INTO game_weeks (week_number, start_date, end_date, is_bye_week) VALUES
 (26, '2027-04-05 00:00:00Z', '2027-04-12 00:00:00Z', true), --bye week
 (27, '2027-04-12 00:00:00Z', '2027-04-19 00:00:00Z', false),
 (28, '2027-04-19 00:00:00Z', '2027-04-26 00:00:00Z', false);
+
+-- Automatically sync the sequence to the highest insert ID
+SELECT setval(pg_get_serial_sequence('game_weeks', 'id'), COALESCE(MAX(id), 1)) FROM game_weeks;

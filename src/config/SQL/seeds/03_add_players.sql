@@ -180,3 +180,6 @@ VALUES
   ('15', 'Rose Hollermann', 'https://images.statsengine.playbyplay.api.geniussports.com/1c07d7f93f6e6388718e084e846de987T1.jpg', '1995-12-25 00:00:00', '30', 'USA', 'F', '3.5', '36370')
 
 ON CONFLICT DO NOTHING;
+
+-- Automatically sync the sequence to the highest insert ID
+SELECT setval(pg_get_serial_sequence('players', 'id'), COALESCE(MAX(id), 1)) FROM players;

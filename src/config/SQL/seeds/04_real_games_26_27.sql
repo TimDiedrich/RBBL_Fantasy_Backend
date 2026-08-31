@@ -70,3 +70,6 @@ INSERT INTO real_games (home_team_id, away_team_id, game_date) VALUES
 ('36362', '36365', '2027-04-17 18:00:00+02'), -- Match 89: RSB Thuringia Bulls vs RB Zwickau e.V.
 ('36370', '36916', '2027-04-17 19:30:00+02'), -- Match 86: RSV Lahn-Dill vs Hannover United
 ('36369', '36366', '2027-04-18 15:00:00+02'); -- Match 87: Rhine River Rhinos vs Doneck Dolphins Trier
+
+-- Automatically sync the sequence to the highest insert ID
+SELECT setval(pg_get_serial_sequence('real_games', 'id'), COALESCE(MAX(id), 1)) FROM real_games;

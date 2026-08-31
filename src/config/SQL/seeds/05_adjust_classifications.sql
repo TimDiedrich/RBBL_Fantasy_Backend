@@ -1,4 +1,4 @@
-UPDATE fantasy_players
+UPDATE players
     SET sport_class = 4.5
 	WHERE player_name IN (
         'Johannes Hengst',
@@ -13,7 +13,7 @@ UPDATE fantasy_players
 		'Len van Dort'
 );
 
-UPDATE fantasy_players
+UPDATE players
     SET sport_class = 1.0
 	WHERE player_name IN (
         'Sören Gebauer',
@@ -25,21 +25,21 @@ UPDATE fantasy_players
 		'Meggie Gay'
 );
 
-UPDATE fantasy_players
+UPDATE players
     SET sport_class = 1.5
 	WHERE player_name IN (
         'Ilse Arts',
 		'Anil Cegil'
 );
 
-UPDATE fantasy_players
+UPDATE players
     SET sport_class = 2.0
     WHERE player_name IN (
         'Teemu Partanen',
 		'Lars Bergenthal'
 );
 
-UPDATE fantasy_players
+UPDATE players
     SET sport_class = 2.5
     WHERE player_name IN (
         'Jordi Ruiz Jordan',
@@ -47,21 +47,21 @@ UPDATE fantasy_players
 		'Lachlin Dalton'
 );
 
-UPDATE fantasy_players
+UPDATE players
     SET sport_class = 3.0
     WHERE player_name IN (
         'Jens Eike Albrecht',
 		'Boris van Hunnik'
 );
 
-UPDATE fantasy_players
+UPDATE players
     SET sport_class = 3.5
     WHERE player_name IN (
         'Arie Twigt',
 		'Steven Elliott'
 );
 
-UPDATE fantasy_players
+UPDATE players
     SET sport_class = 4.0
     WHERE player_name IN ('');
 

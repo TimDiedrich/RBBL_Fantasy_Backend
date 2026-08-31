@@ -14,3 +14,6 @@ VALUES
   ('RSV Lahn-Dill', '36370', 'https://images.statsengine.playbyplay.api.geniussports.com/c5bc9aed4e2c6580638d3f409cb9becbT1.jpg')
 
 ON CONFLICT DO NOTHING;
+
+-- Automatically sync the sequence to the highest insert ID
+SELECT setval(pg_get_serial_sequence('teams', 'id'), COALESCE(MAX(id), 1)) FROM teams;
