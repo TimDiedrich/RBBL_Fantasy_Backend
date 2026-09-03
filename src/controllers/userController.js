@@ -32,7 +32,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const passwordCheck = checkPasswordStrength(password);
 
     if(!passwordCheck.isValid) {
-        throw ApiError.badRequest(passwordCheck.warning);
+        throw ApiError.badRequest(passwordCheck.warning + " " + passwordCheck.suggestions);
     }
 
     try {
