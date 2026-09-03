@@ -11,7 +11,8 @@ const fantasyTeamRoutes = require('./routes/fantasyTeamRoutes');
 const standingsRoutes = require('./routes/standingsRoutes');
 const rosterRoutes = require('./routes/rosterRoutes');
 const realGamesRoutes = require('./routes/realGamesRoutes');
-const leagueAdminSettings = require('./routes/leagueAdminSettingsRoutes');
+const leagueAdminSettingsRoutes = require('./routes/leagueAdminSettingsRoutes');
+const healthRoutes = require('./routes/healthRoutes');
 
 const app = express();
 
@@ -44,7 +45,8 @@ apiRouter.use('/fantasy_teams', fantasyTeamRoutes);
 apiRouter.use('/standings', standingsRoutes);
 apiRouter.use('/rosters', rosterRoutes);
 apiRouter.use('/real_games', realGamesRoutes);
-apiRouter.use('/league_admin_settings', leagueAdminSettings);
+apiRouter.use('/league_admin_settings', leagueAdminSettingsRoutes);
+apiRouter.use('/health', healthRoutes);
 
 app.use('/api', apiRouter);
 //app.use('/api/v1', apiV1Router);
