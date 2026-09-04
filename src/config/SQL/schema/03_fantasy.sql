@@ -48,6 +48,8 @@ CREATE TABLE IF NOT EXISTS fantasy_players (
 	bonus NUMERIC(2, 1) DEFAULT 0.0,
 	team_id VARCHAR(8) REFERENCES teams(team_id) ON DELETE SET NULL,
 	is_active BOOLEAN DEFAULT TRUE,
+	is_drafted BOOLEAN DEFAULT FALSE,
+	drafted_by_team_id INT REFERENCES fantasy_teams(id) ON DELETE SET NULL,
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 	
 	CONSTRAINT check_sport_class 
@@ -104,6 +106,45 @@ CREATE TABLE IF NOT EXISTS matchups (
 	CONSTRAINT different_matchup_teams CHECK (home_team_id <> away_team_id)
 );
 
+CREATE_TABLE IF NOT EXISTS draft_rooms (
+    league_id INT PRIMARY KEY REFERENCES fantasy_leagues(id) ON DELETE CASCADE,
+	--status tracking
+	status VARCHAR(20) DEFAULT 'NOT_STARTED',
+
+	-- state & trun tracking
+	current_round = INt DEFAULT 1,
+	current_pick_number INT DEFAULT 1, -- Overall pick counter (1..N)
+	current_fantasy_team_id INT REFERENCES fantasy_teams(id) ON DELETE SET NULL,
+
+	-- Server-Authoritative Time 
+	time_per_pick_seconds INT DEFAULT 90,
+	pick_deadline TIMESTAMP WITH TIME ZONE, -- calculated: NOW() + interval '90s'
+
+    -- Timestamps
+	started_at TIMESTAMP WTIH TIME ZONE,
+	completed_at TIMESTAMP WITH TIME ZONE,
+	updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS draft_order (
+    id SERIAL PRIMARY KEY,
+	league_id INT NOT NULL REFERENCES fantasy_leagues(id) ON DELETE CASCADE,
+	fantasy_team_id INT NOT NULL REFERENCES fantasy_teams(id) ON DELETE CASCADE,
+	draft_position INT NOT NULL, -- Position 1 through 8
+
+	CONSTRAINT unique_position_per_league UNIQUE (league_id, draft_position),
+	CONSTRAINT unique_team_in_draft_order UNIQUE (league_id, fantasy_team_id)
+);
+
+CREATE TABLE IF NOT EXISTS draft_queues (
+    id SERIAL PRIMARY KEY,
+	fantasy_team_id INT NOT NULL REFERENCES fantasy_teams(id) ON DELETE CASCADE,
+	fantasy_player_id INT NOT NULL REFERENCES fantasy_players(id) ON DELETE CASCADE,
+	priority INT NOT NULL, -- needed? 1 = Top Choice, 2 = Second Choice,
+
+	CONSTRAINT unique_player_in_team_queue UNIQUE (fantasy_team_id, fantasy_player_id),
+	CONSTRAINT unique_priority_per_team_queue UNIQUE (fantasy_team_id, priority)
+);
 
 CREATE TABLE IF NOT EXISTS draft_picks (
     id SERIAL PRIMARY KEY,
@@ -113,6 +154,8 @@ CREATE TABLE IF NOT EXISTS draft_picks (
 	fantasy_team_id INT REFERENCES fantasy_teams(id) ON DELETE CASCADE,
 	fantasy_player_id INT REFERENCES fantasy_players(id) ON DELETE CASCADE,
 	picked_at TIMESTAMP WITH TIME ZONE,
+	is_auto_picked BOOLEAN DEFAULT FALSE,
+	is_skipped BOOLEAN DEFAULT FALSE,
 
 	CONSTRAINT unique_pick_per_league UNIQUE (league_id, round, pick_number)
 );
