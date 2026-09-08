@@ -103,37 +103,34 @@ const getUndraftedPlayers = asyncHandler(async (req, res) => {
     if (isNaN(leagueIdNum)) {
         throw ApiError.badRequest('Valid query parameter fantasy_league_id is required.');
     }
+
     const getQuery = `
-        SELECT 
-            p.id AS id,
-            p.league_id AS league_id,
-            p.original_player_id AS original_player_id,
-            p.shirt_number AS shirt_number,
-            p.player_name AS player_name,
-            p.image_url AS image_url,
-            p.dob AS dob,
-            p.nationality AS nationality,
-            p.position AS position,
-            p.sport_class AS sport_class,
-            p.gender AS gender,
-            p.bonus AS bonus,
-            p.team_id AS team_id,
-            p.is_active AS is_active
-        FROM fantasy_players p
-        WHERE p.league_id = $1
-        AND p.is_active = TRUE
-        AND NOT EXISTS (
-        SELECT 1 FROM rosters r
-        JOIN fantasy_teams ft ON r.fantasy_team_id = ft.id
-        WHERE r.player_id = p.id
-        AND ft.league_id = $1
-        )
-        ORDER BY p.player_name ASC;
+        SELECT
+            id,
+            league_id,
+            original_player_id,
+            shirt_number,
+            player_name,
+            image_url,
+            dob,
+            nationality,
+            position,
+            sport_class,
+            gender,
+            bonus,
+            team_id,
+            is_active,
+            is_drafted,
+            drafted_by_team_id
+        FROM fantasy_players
+        WHERE league_id = $1
+        AND is_active = TRUE
+        AND is_drafted = FALSE
+        ORDER BY player_name ASC;
     `;
 
     const { rows } = await db.query(getQuery, [leagueIdNum]);
     return res.status(200).json({ players: rows });
-
 });
 
 const saveRoster = asyncHandler(async(req, res) => {
