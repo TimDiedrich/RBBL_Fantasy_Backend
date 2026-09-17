@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS fantasy_leagues (
     id SERIAL PRIMARY KEY,
 	league_name VARCHAR (100) NOT NULL,
 	commissioner_id INT REFERENCES users(id) ON DELETE CASCADE,
+	max_number_teams INT NOT NULL DEFAULT 8,
 	invite_code VARCHAR(10) UNIQUE NOT NULL,
 	draft_status draft_status DEFAULT 'PREDRAFT',
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

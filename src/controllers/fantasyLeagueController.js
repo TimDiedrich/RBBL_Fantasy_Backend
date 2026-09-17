@@ -13,9 +13,14 @@ const generateInviteCode = () => {
 }
 
 const createLeague = asyncHandler(async(req, res) => {
-    const { name } = req.body;
+    const { name, numOfTeams } = req.body;
     const userId = req.user?.id || req.body.userId;
     const cleanLeagueName = name?.trim() || '';
+
+    const numTeams = parseInt(numOfTeams, 10);
+    if(isNaN(numTeams)) {
+        throw ApiError.badRequest('Invalid number of teams.');
+    }
 
     if(!cleanLeagueName || !userId){
         return res.status(400).json({ error: 'League name and user ID are required.'})
@@ -36,12 +41,12 @@ const createLeague = asyncHandler(async(req, res) => {
         const inviteCode = generateInviteCode();
 
         const insertQuery = `
-        INSERT INTO fantasy_leagues (league_name, commissioner_id, invite_code)
-        VALUES ($1, $2, $3)
-        RETURNING id, league_name, commissioner_id, invite_code, draft_status, created_at;
+        INSERT INTO fantasy_leagues (league_name, commissioner_id, max_number_teams, invite_code)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, league_name, commissioner_id, max_number_teams, invite_code, draft_status, created_at;
         `;
 
-        const { rows } = await client.query(insertQuery, [cleanLeagueName, userId, inviteCode]);
+        const { rows } = await client.query(insertQuery, [cleanLeagueName, userId, numTeams, inviteCode]);
         const newLeague = rows[0];
 
         const insertSettingsQuery = `
@@ -90,7 +95,7 @@ const getLeagues = asyncHandler(async(req, res) => {
     }
     // For simple get queries not try needed
     const getQuery = `
-    SELECT id, league_name, commissioner_id, invite_code, draft_status, created_at FROM fantasy_leagues
+    SELECT id, league_name, commissioner_id, max_number_teams, invite_code, draft_status, created_at FROM fantasy_leagues
     WHERE commissioner_id = $1;
     `;
 
@@ -118,6 +123,7 @@ const getLeagueById = asyncHandler(async(req, res) => {
                 fl.id AS id,
                 fl.league_name AS league_name,
                 fl.commissioner_id AS commissioner_id,
+                fl.max_number_teams AS max_number_teams,
                 u.username AS commissioner_username,
                 fl.invite_code AS invite_code,
                 fl.draft_status AS draft_status,
@@ -202,6 +208,7 @@ const updateLeagueById = asyncHandler(async(req, res) => {
                 fl.id,
                 fl.league_name,
                 fl.commissioner_id,
+                fl.max_number_teams,
                 fl.invite_code,
                 fl.draft_status,
                 fl.created_at,
@@ -241,7 +248,7 @@ const joinLeagueByCode = asyncHandler(async (req, res) => {
     }
 
     const leagueResult = await db.query(
-        `SELECT id, league_name, commissioner_id, invite_code, draft_status, created_at FROM fantasy_leagues
+        `SELECT id, league_name, commissioner_id, max_number_teams, invite_code, draft_status, created_at FROM fantasy_leagues
         WHERE invite_code = $1`,
         [invite_code.trim().toUpperCase()]
     );
@@ -270,7 +277,7 @@ const joinLeagueByCode = asyncHandler(async (req, res) => {
         [league.id]
     );
 
-    if (parseInt(capacityCheck.rows[0].count, 10) >= 8) {
+    if (parseInt(capacityCheck.rows[0].count, 10) >= league.max_number_teams) {
         throw ApiError.badRequest ('This league has reached its maximum team capacity');
     }
 

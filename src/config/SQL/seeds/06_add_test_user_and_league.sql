@@ -9,8 +9,8 @@ SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE(MAX(id), 1)) FROM 
 ---------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------
-INSERT INTO fantasy_leagues (id, league_name, commissioner_id, invite_code)
-VALUES ('1', 'MyLeague1', '1', 'AF8531F8');
+INSERT INTO fantasy_leagues (id, league_name, commissioner_id, max_number_teams, invite_code)
+VALUES ('1', 'MyLeague1', '1', '4', 'AF8531F8');
 
 -- Automatically sync the sequence to the highest insert ID
 SELECT setval(pg_get_serial_sequence('fantasy_leagues', 'id'), COALESCE(MAX(id), 1)) FROM fantasy_leagues;
