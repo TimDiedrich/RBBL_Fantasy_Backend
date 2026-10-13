@@ -410,7 +410,8 @@ async function getDraftRoomState(leagueId) {
         const draftQuery = `
         SELECT 
             dr.league_id AS leagueId,
-            dr.status,
+            dr.status AS status,
+            dr.scheduled_for AS scheduled_for,
             dr.current_round AS currentRound,
             dr.current_pick_number AS currentPickNumber,
             dr.current_fantasy_team_id AS currentFantasyTeamId,
@@ -427,6 +428,7 @@ async function getDraftRoomState(leagueId) {
         // Default draft room metadata if no active draft room exists yet
         let draftInfo = {
             status: 'NOT_STARTED',
+            scheduled_for: null,
             currentRound: 1,
             currentPickNumber: 1,
             currentFantasyTeamId: null,
@@ -440,11 +442,6 @@ async function getDraftRoomState(leagueId) {
         if (draftResult.rows.length > 0) {
             draftInfo = draftResult.rows[0];
         }
-        // if (draftResult.rows.length === 0) {
-        //    throw new Error(`No active draft found for league ID: ${leagueId}`);
-        // }
-
-        // const draftInfo = draftResult.rows[0];
 
         const playersQuery = `
             SELECT 
@@ -470,6 +467,7 @@ async function getDraftRoomState(leagueId) {
 
         return {
             status: draftInfo.status,
+            scheduled_for: draftInfo.scheduled_for,
             currentTurn: {
                 round: draftInfo.currentRound,
                 pickNumber: draftInfo.currentPickNumber,
@@ -633,4 +631,78 @@ module.exports = function handleDraftSockets(io, socket) {
     });
 };
 
+
+
+/**
+ * Generates or replaces the draft order for a given league.
+ * @param {Object} dbClient - An active pg database client (for transaction support)
+ * @param {number} leagueId - The ID of the fantasy league
+ * @param {boolean} [randomize=true] - Whether to shuffle the team order
+ */
+const generateDraftOrder = async (dbClient, leagueId, scheduledFor, randomize = true) => {
+    // 1. Fetch all fantasy teams registered in this league
+    const teamsQuery = `
+        SELECT id FROM fantasy_teams 
+        WHERE league_id = $1 
+        ORDER BY created_at ASC;
+    `;
+    const { rows: teams } = await dbClient.query(teamsQuery, [leagueId]);
+
+    if (teams.length < 2) {
+        throw ApiError.badRequest('At least 2 teams are required in the league to schedule a draft.');
+    }
+
+    // 2. Shuffle team order (Fisher-Yates) if randomize is true
+    let teamList = [...teams];
+    if (randomize) {
+        for (let i = teamList.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [teamList[i], teamList[j]] = [teamList[j], teamList[i]];
+        }
+    }
+
+    // 3. Clear existing draft order (if rescheduling)
+    await dbClient.query('DELETE FROM draft_order WHERE league_id = $1;', [leagueId]);
+
+    // 4. Construct bulk insert values
+    const insertValues = [];
+    const queryParams = [];
+    let paramIndex = 1;
+
+    teamList.forEach((team, index) => {
+        const draftPosition = index + 1;
+        insertValues.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2})`);
+        queryParams.push(leagueId, team.id, draftPosition);
+        paramIndex += 3;
+    });
+
+    const set_draft_room_scheduled_query = `
+        INSERT INTO draft_rooms (league_id, status, scheduled_for)
+        VALUES ($1, 'SCHEDULED', $2)
+        ON CONFLICT (league_id) DO UPDATE
+            SET
+                status = 'SCHEDULED',
+                scheduled_for = $2,
+                updated_at = CURRENT_TIMESTAMP;
+    `;
+
+    const { rows } = await dbClient.query(set_draft_room_scheduled_query, [leagueId, scheduledFor]);
+
+    const insertQuery = `
+        INSERT INTO draft_order (league_id, fantasy_team_id, draft_position)
+        VALUES ${insertValues.join(', ')}
+        RETURNING id, league_id AS "leagueId", fantasy_team_id AS "fantasyTeamId", draft_position AS "draftPosition";
+    `;
+
+    const { rows: insertedOrder } = await dbClient.query(insertQuery, queryParams);
+
+    
+
+    return insertedOrder;
+};
+//module.exports = { generateDraftOrder, draftService};
+
+//module.exports.service = draftService;
+
+module.exports.generateDraftOrder = generateDraftOrder;
 module.exports.service = draftService;

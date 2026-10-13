@@ -15,18 +15,33 @@ const getDraftOrder = asyncHandler(async(req, res) => {
         throw ApiError.badRequest('Invalid league ID.');
     }
 
+    // 1. Authorization: Ensure requesting user belongs to this league
+    const memberCheckQuery = `
+        SELECT 1 FROM league_members 
+        WHERE league_id = $1 AND user_id = $2;
+    `;
+    const { rowCount } = await db.query(memberCheckQuery, [leagueId, userId]);
+    if (rowCount === 0) {
+        throw ApiError.forbidden('You are not a member of this league.');
+    }
+
     const getQuery = `
     SELECT
-        do.league_id AS league_id,
-        do.fantasy_team_id AS fantasy_team_id,
+        ord.league_id AS league_id,
+        ord.fantasy_team_id AS fantasy_team_id,
         ft.team_name AS team_name,
-        do.draft_position AS draft_position,
-    FROM draft_order do
-    JOIN fantasy_teams ft ON ft.id = do.fantasy_team_id
-    WHERE do.league_id = $1;
+        ord.draft_position AS draft_position
+    FROM draft_order ord
+    JOIN fantasy_teams ft ON ft.id = ord.fantasy_team_id
+    WHERE ord.league_id = $1
+    ORDER BY ord.draft_position ASC;
     `;
 
     const { rows } = await db.query(getQuery, [leagueId]);
 
-    return res.status(200).json(rows[0]);
-})
+    return res.status(200).json(rows);
+});
+
+
+
+module.exports = { getDraftOrder };

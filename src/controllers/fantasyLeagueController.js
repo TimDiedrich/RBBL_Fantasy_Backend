@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const asyncHandler = require('../middlewares/asyncHandler');
 const ApiError = require('../utils/ApiError');
+const { generateDraftOrder } = require('../services/draftService');
 
 const crypto = require('crypto');
 
@@ -95,7 +96,7 @@ const getLeagues = asyncHandler(async(req, res) => {
     }
     // For simple get queries not try needed
     const getQuery = `
-    SELECT id, league_name, commissioner_id, max_number_teams, invite_code, draft_status, created_at FROM fantasy_leagues
+    SELECT id, league_name, commissioner_id, max_number_teams, invite_code, draft_status, draft_date, created_at FROM fantasy_leagues
     WHERE commissioner_id = $1;
     `;
 
@@ -127,6 +128,7 @@ const getLeagueById = asyncHandler(async(req, res) => {
                 u.username AS commissioner_username,
                 fl.invite_code AS invite_code,
                 fl.draft_status AS draft_status,
+                fl.draft_date AS draft_date,
                 fl.created_at AS created_at,
                 json_build_object(
                     'max_lineup_points', COALESCE(ls.max_lineup_points, 14.5),
@@ -164,7 +166,7 @@ const updateLeagueById = asyncHandler(async(req, res) => {
         throw ApiError.badRequest('Invalid league ID.');
     }
 
-    const { league_name, draft_status, needs_new_invite_code } = req.body;
+    const { league_name, draft_status, draft_date, needs_new_invite_code } = req.body;
     const newInviteCode = needs_new_invite_code ? generateInviteCode() : null;
 
     const client = await db.connect();
@@ -185,21 +187,31 @@ const updateLeagueById = asyncHandler(async(req, res) => {
             throw ApiError.forbidden('Only the commissioner can update league settings.');
         }
 
-        if (league_name || draft_status || needs_new_invite_code) {
+        const currentStatus = leagueCheck.rows[0].draft_status;
+
+        if (league_name || draft_status || draft_date || needs_new_invite_code) {
             await client.query(
                 `
                 UPDATE fantasy_leagues
                 SET league_name = COALESCE($1, league_name),
                     draft_status = COALESCE($2, draft_status),
-                    invite_code = COALESCE($3, invite_code)
-                WHERE id = $4`,
+                    draft_date = COALESCE($3, draft_date),
+                    invite_code = COALESCE($4, invite_code)
+                WHERE id = $5`,
                 [
                     league_name?.trim() || null,
                     draft_status || null,
+                    draft_date || null,
                     newInviteCode,
                     leagueId
                 ]
             );
+        }
+
+        const isSchedulingDraft = (draft_status === "SCHEDULED" && draft_date);
+
+        if(isSchedulingDraft) {
+            await generateDraftOrder(client, leagueId, draft_date, true);
         }
 
         // return new values
@@ -211,6 +223,7 @@ const updateLeagueById = asyncHandler(async(req, res) => {
                 fl.max_number_teams,
                 fl.invite_code,
                 fl.draft_status,
+                fl.draft_date,
                 fl.created_at,
                 json_build_object(
                     'max_lineup_points', ls.max_lineup_points,
@@ -248,7 +261,7 @@ const joinLeagueByCode = asyncHandler(async (req, res) => {
     }
 
     const leagueResult = await db.query(
-        `SELECT id, league_name, commissioner_id, max_number_teams, invite_code, draft_status, created_at FROM fantasy_leagues
+        `SELECT id, league_name, commissioner_id, max_number_teams, invite_code, draft_status, draft_date, created_at FROM fantasy_leagues
         WHERE invite_code = $1`,
         [invite_code.trim().toUpperCase()]
     );
@@ -320,7 +333,52 @@ const getMemberships = asyncHandler( async(req, res) => {
     const { rows } = await db.query(getQuery, [userId]);
 
     res.status(200).json(rows);
-})
+});
+
+const getAllMembers = asyncHandler(async(req, res) => {
+    const userId = req.user?.id;
+    if(!userId) {
+        throw ApiError.unauthorized('User ID is required.');
+    }
+    
+    const leagueId = parseInt(req.query.league_id, 10);
+    if (isNaN(leagueId)) {
+        throw ApiError.badRequest('Invalid league ID.');
+    }
+
+    // 1. Authorization Check: Ensure the requesting user belongs to the requested league
+    const membershipCheckQuery = `
+        SELECT 1 FROM league_members 
+        WHERE league_id = $1 AND user_id = $2;
+    `;
+    const { rowCount } = await db.query(membershipCheckQuery, [leagueId, userId]);
+    
+    if (rowCount === 0) {
+        throw ApiError.forbidden('You are not a member of this league.');
+    }
+    
+    const getQuery = `
+    SELECT 
+        lm.id AS id,
+        lm.league_id AS league_id,
+        lm.user_id AS user_id,
+        lm.role AS role,
+        lm.joined_at AS joined_at,
+        l.league_name AS league_name,
+        ft.team_name AS fantasy_team_name
+    FROM league_members lm
+    JOIN fantasy_leagues l
+        ON lm.league_id = l.id
+    LEFT JOIN fantasy_teams ft
+        ON lm.league_id = ft.league_id
+        AND lm.user_id = ft.user_id
+    WHERE lm.league_id = $1;
+    `;
+
+    const { rows } = await db.query(getQuery, [leagueId]);
+
+    res.status(200).json(rows);
+});
 
 
 module.exports = {
@@ -329,5 +387,6 @@ module.exports = {
     getLeagueById,
     updateLeagueById,
     joinLeagueByCode,
-    getMemberships
+    getMemberships,
+    getAllMembers
 };

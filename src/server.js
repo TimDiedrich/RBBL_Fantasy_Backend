@@ -15,7 +15,10 @@ const standingsRoutes = require('./routes/standingsRoutes');
 const rosterRoutes = require('./routes/rosterRoutes');
 const realGamesRoutes = require('./routes/realGamesRoutes');
 const leagueAdminSettingsRoutes = require('./routes/leagueAdminSettingsRoutes');
+const draftRoutes = require('./routes/draftRoutes');
 const healthRoutes = require('./routes/healthRoutes');
+
+const { startCronJobs, syncStatsJobsFromFixtures } = require('./jobs/scheduler');
 
 // Socket handlers
 const draftService = require('./services/draftService');
@@ -101,6 +104,7 @@ apiRouter.use('/standings', standingsRoutes);
 apiRouter.use('/rosters', rosterRoutes);
 apiRouter.use('/real_games', realGamesRoutes);
 apiRouter.use('/league_admin_settings', leagueAdminSettingsRoutes);
+apiRouter.use('/draft_order', draftRoutes);
 apiRouter.use('/health', healthRoutes);
 
 app.use('/api', apiRouter);
@@ -117,4 +121,6 @@ app.use(errorHandler);
 // For dev in home network
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Home Network Server running on http://0.0.0.0:${PORT}`);
+
+    startCronJobs();
 });
