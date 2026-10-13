@@ -39,7 +39,9 @@ CREATE TABLE IF NOT EXISTS real_games (
 	away_team_id VARCHAR(8) REFERENCES teams(team_id),
 	game_date TIMESTAMP WITH TIME ZONE NOT NULL,
 	home_score INT DEFAULT 0,
-	away_score INT DEFAULT 0
+	away_score INT DEFAULT 0,
+
+	CONSTRAINT unique_match UNIQUE (home_team_id, away_team_id, game_date)
 );
 
 CREATE TABLE IF NOT EXISTS game_weeks (
@@ -55,6 +57,7 @@ CREATE TABLE IF NOT EXISTS player_game_stats (
     id SERIAL PRIMARY KEY,
 	player_id INT REFERENCES players(id) ON DELETE CASCADE,
 	game_id INT REFERENCES real_games(id) ON DELETE CASCADE,
+	-- stats below
 	minutes_played INTERVAL NOT NULL DEFAULT '00:00:00',
 	two_points_made INT NOT NULL DEFAULT 0,
 	two_points_attempted INT NOT NULL DEFAULT 0,

@@ -22,6 +22,9 @@ BEGIN;
 \echo 'Creating Views...'
 \i src/config/SQL/schema/05_views.sql
 
+\echo 'Creating Scaping Table...'
+\i src/config/SQL/schema/06_scraping.sql
+
 -- 2. SEED DATA (Initial Static Data)
 \echo 'Seeding Game Weeks...'
 \i src/config/SQL/seeds/01_game_weeks.sql
@@ -33,7 +36,8 @@ BEGIN;
 \i src/config/SQL/seeds/03_add_players.sql
 
 \echo 'Adding Real Games of Season 26/27...'
-\i src/config/SQL/seeds/04_real_games_26_27.sql
+\echo 'Skipped...'
+-- \i src/config/SQL/seeds/04_real_games_26_27.sql
 
 \echo 'Adjusting Classifications...'
 \i src/config/SQL/seeds/05_adjust_classifications.sql

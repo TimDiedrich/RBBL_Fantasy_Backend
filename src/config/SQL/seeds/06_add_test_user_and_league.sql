@@ -1,7 +1,10 @@
 INSERT INTO users (id, username, email, pw_hash)
 VALUES
 ('1', 'tim', 'tim-diedrich@gmx.de', '$2b$12$F7acZkbBr12K75Gfa45fd.aj.8VGOs9Fgmn4vgO7pe719Wg3AuHjW'),
-('2', 'Standard2', 'test@test.de', '$2b$12$ogP5Q0EJzmkMHDX/yIM35e1lIT1HoqJT8kZ8f7//1fZEis.KwCkRa');
+('2', 'Standard2', 'test@test.de', '$2b$12$ogP5Q0EJzmkMHDX/yIM35e1lIT1HoqJT8kZ8f7//1fZEis.KwCkRa'),
+('3', 'tim2', 'ttt2@gmx.de', '$2b$12$F7acZkbBr12K75Gfa45fd.aj.8VGOs9Fgmn4vgO7pe719Wg3AuHjW'),
+('4', 'tim3', 'ttt3@gmx.de', '$2b$12$F7acZkbBr12K75Gfa45fd.aj.8VGOs9Fgmn4vgO7pe719Wg3AuHjW'),
+('5', 'tim4', 'ttt4@gmx.de', '$2b$12$F7acZkbBr12K75Gfa45fd.aj.8VGOs9Fgmn4vgO7pe719Wg3AuHjW');
 
 
 -- Automatically sync the sequence to the highest insert ID
@@ -18,7 +21,11 @@ SELECT setval(pg_get_serial_sequence('fantasy_leagues', 'id'), COALESCE(MAX(id),
 
 ---------------------------------------------------------------------------------------------------
 INSERT INTO league_members (league_id, user_id, "role")
-VALUES ('1', '1', 'COMMISSIONER');
+VALUES 
+('1', '1', 'COMMISSIONER'),
+('1', '2', 'MEMBER'),
+('1', '3', 'MEMBER'),
+('1', '4', 'MEMBER');
 
 -- Automatically sync the sequence to the highest insert ID
 SELECT setval(pg_get_serial_sequence('league_members', 'id'), COALESCE(MAX(id), 1)) FROM league_members;
@@ -53,7 +60,11 @@ VALUES ('1');
 
 ---------------------------------------------------------------------------------------------------
 INSERT INTO fantasy_teams (league_id, user_id, team_name)
-VALUES ('1', '1', 'MyTeam1');
+VALUES
+('1', '1', 'MyTeam1'),
+('1', '2', 'MyTeam2'),
+('1', '3', 'MyTeam3'),
+('1', '4', 'MyTeam4');
 
 -- Automatically sync the sequence to the highest insert ID
 SELECT setval(pg_get_serial_sequence('fantasy_teams', 'id'), COALESCE(MAX(id), 1)) FROM fantasy_teams;

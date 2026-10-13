@@ -146,22 +146,6 @@ VALUES
 
 ON CONFLICT DO NOTHING;
 
--- Appended batch seed for table: players
-
-INSERT INTO players (shirt_number, player_name, image_url, dob, age, nationality, position, sport_class, team_id)
-VALUES
-  ('0', 'Sebastian Gillsch', 'https://images.statsengine.playbyplay.api.geniussports.com/fec8865e4d55f8450168de34668fa3c6T1.jpg', '1992-03-22 00:00:00', '34', 'GER', 'C/PF', '4.5', '36956'),
-  ('1', 'Isaac Lipscomb', 'https://images.statsengine.playbyplay.api.geniussports.com/d4499b6d826ae0830334e9de25b3498dT1.jpg', '1999-04-01 00:00:00', '27', 'GER', 'PG', '5.0', '36956'),
-  ('5', 'Vahid Atefimonfared', 'https://images.statsengine.playbyplay.api.geniussports.com/240f4737e3f9438b0af38a98556ed92eT1.jpg', '1988-10-17 00:00:00', '37', 'GER', 'C/PF', '5.0', '36956'),
-  ('8', 'Meggie Gay', 'https://images.statsengine.playbyplay.api.geniussports.com/f372109235764e5d56a25308d7ae6191T1.jpg', '1993-10-14 00:00:00', '32', 'GER', 'SF', '5.0', '36956'),
-  ('10', 'Mees Hessels', NULL, '1995-01-18 00:00:00', '31', 'NED', 'SF/PF', '3.0', '36956'),
-  ('11', 'Dario Schulz', 'https://images.statsengine.playbyplay.api.geniussports.com/bbfb9946bed4a5a4232a978f9b23a94fT1.jpg', '1995-04-15 00:00:00', '31', 'GER', 'C/F', '4.5', '36956'),
-  ('12', 'Christian Sesante', NULL, NULL, NULL, 'GER', 'G', '1.5', '36956'),
-  ('15', 'Mary Silberman', 'https://images.statsengine.playbyplay.api.geniussports.com/7536d88ca6049b4d9dcf7ff08540aeb1T1.jpg', '1997-07-15 00:00:00', '29', 'GER', 'N/A', '5.0', '36956'),
-  ('22', 'Dagmar van Hinte', 'https://images.statsengine.playbyplay.api.geniussports.com/e39a9dfecca2a0b8fd734221ac31405cT1.jpg', '1996-11-25 00:00:00', '29', 'NED', 'SF', '4.5', '36956'),
-  ('23', 'Dominik Langer', 'https://images.statsengine.playbyplay.api.geniussports.com/8b059a2322625069f8957761bed2cf9fT1.jpg', '2008-01-04 00:00:00', '18', 'GER', 'SF', '2.5', '36956')
-
-ON CONFLICT DO NOTHING;
 
 -- Appended batch seed for table: players
 

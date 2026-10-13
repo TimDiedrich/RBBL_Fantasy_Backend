@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS fantasy_leagues (
 	max_number_teams INT NOT NULL DEFAULT 8,
 	invite_code VARCHAR(10) UNIQUE NOT NULL,
 	draft_status draft_status DEFAULT 'PREDRAFT',
+	draft_date TIMESTAMP WITH TIME ZONE,
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -109,9 +110,9 @@ CREATE TABLE IF NOT EXISTS matchups (
 
 CREATE TABLE IF NOT EXISTS draft_rooms (
     league_id INT PRIMARY KEY REFERENCES fantasy_leagues(id) ON DELETE CASCADE,
-    
+	
     -- Status tracking
-    status VARCHAR(20) DEFAULT 'NOT_STARTED', -- 'NOT_STARTED', 'PAUSED', 'IN_PROGRESS', 'COMPLETED'
+    status VARCHAR(20) DEFAULT 'NOT_STARTED', -- 'NOT_STARTED', 'SCHEDULED', 'PAUSED', 'IN_PROGRESS', 'COMPLETED'
     
     -- State & Turn Tracking
     current_round INT DEFAULT 1,
@@ -123,6 +124,7 @@ CREATE TABLE IF NOT EXISTS draft_rooms (
     pick_deadline TIMESTAMP WITH TIME ZONE, -- calculated: NOW() + interval '90 seconds'
     
     -- Timestamps
+	scheduled_for TIMESTAMP WITH TIME ZONE,
     started_at TIMESTAMP WITH TIME ZONE,
     completed_at TIMESTAMP WITH TIME ZONE,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

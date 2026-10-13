@@ -10,7 +10,6 @@ VALUES
   ('RB Zwickau e.V.', '36365', 'https://images.statsengine.playbyplay.api.geniussports.com/e57c77e095b005e843d90cee13adb471T1.png'),
   ('Rhine River Rhinos', '36369', 'https://images.statsengine.playbyplay.api.geniussports.com/81410f8a8818324894eaf630b39a8b2cT1.jpg'),
   ('RSB Thuringia Bulls', '36362', 'https://images.statsengine.playbyplay.api.geniussports.com/5eb2722a1622f0782cb42c94091b252fT1.png'),
-  ('RSV Bayreuth', '36956', 'https://images.statsengine.playbyplay.api.geniussports.com/d88c0b1246fb6f1cdacc792cdad23165T1.png'),
   ('RSV Lahn-Dill', '36370', 'https://images.statsengine.playbyplay.api.geniussports.com/c5bc9aed4e2c6580638d3f409cb9becbT1.jpg')
 
 ON CONFLICT DO NOTHING;
