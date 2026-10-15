@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest --detectOpenHandles --forceExit",
     "start": "node src/server.js",
     "dev:server": "nodemon src/server.js",
     "dev:bot": "node DevSentinel.js",
@@ -36,6 +36,8 @@
   },
   "devDependencies": {
     "concurrently": "^10.0.5",
-    "nodemon": "^3.1.14"
+    "jest": "^30.5.2",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.3.1"
   }
 }
