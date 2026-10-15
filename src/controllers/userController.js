@@ -82,7 +82,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const rawPassword = password || '';
 
     if (!cleanUsername || !rawPassword){
-        ApiError.badRequest('Server Error: Username and password are required');
+        throw ApiError.badRequest('Server Error: Username and password are required');
     }
 
     const getQuery = `
