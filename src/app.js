@@ -85,24 +85,22 @@ if (process.env.NODE_ENV === 'production') {
     });
 }
 
-// 1. VERSIONED ROUTE BASE PATH (/api/v1)
-// const apiV1Router = express.Router();
+// Versioned API routes.
 
 const apiRouter = express.Router();
 
-apiRouter.use('/players', playerRoutes);
-apiRouter.use('/users', userRoutes);
-apiRouter.use('/fantasy_league', fantasyLeagueRoutes);
-apiRouter.use('/fantasy_teams', fantasyTeamRoutes);
-apiRouter.use('/standings', standingsRoutes);
-apiRouter.use('/rosters', rosterRoutes);
-apiRouter.use('/real_games', realGamesRoutes);
-apiRouter.use('/league_admin_settings', leagueAdminSettingsRoutes);
-apiRouter.use('/draft_order', draftRoutes);
+apiRouter.use('/', userRoutes);
+apiRouter.use('/fantasy-leagues', fantasyLeagueRoutes);
+apiRouter.use('/fantasy-leagues', standingsRoutes);
+apiRouter.use('/fantasy-leagues', leagueAdminSettingsRoutes);
+apiRouter.use('/fantasy-leagues', draftRoutes);
+apiRouter.use('/fantasy-leagues/:leagueId/players', playerRoutes);
+apiRouter.use('/fantasy-teams', fantasyTeamRoutes);
+apiRouter.use('/fantasy-teams', rosterRoutes);
+apiRouter.use('/real-games', realGamesRoutes);
 apiRouter.use('/health', healthRoutes);
 
-app.use('/api', apiRouter);
-//app.use('/api/v1', apiV1Router);
+app.use('/api/v1', apiRouter);
 
 // 404
 app.use((req, res, next) => {

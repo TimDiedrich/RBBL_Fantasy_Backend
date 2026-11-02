@@ -4,14 +4,10 @@ const userController = require('../controllers/userController');
 const { registerLimiter, loginLimiter } = require('../middlewares/rateLimiter')
 const authenticateToken = require('../middlewares/authenticate');
 
-// GET /api/users
-//router.get('/', userController.getUser);
+router.post('/auth/register', registerLimiter, userController.registerUser);
 
-// SET /api/users/
-router.post('/register', registerLimiter, userController.registerUser);
+router.post('/auth/login', loginLimiter, userController.loginUser);
 
-router.post('/login', loginLimiter, userController.loginUser);
-
-router.get('/current', authenticateToken, userController.getCurrentUser);
+router.get('/users/me', authenticateToken, userController.getCurrentUser);
 
 module.exports = router;

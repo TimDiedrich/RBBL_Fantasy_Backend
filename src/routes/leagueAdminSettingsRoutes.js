@@ -4,6 +4,6 @@ const { getLeagueSettings } = require('../controllers/leagueAdminSettingsControl
 const authenticateToken = require('../middlewares/authenticate');
 
 
-router.get('/:id', authenticateToken, getLeagueSettings);
+router.get('/:leagueId/settings', authenticateToken, getLeagueSettings);
 
 module.exports = router;

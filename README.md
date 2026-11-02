@@ -79,4 +79,5 @@ psql -U postgres -d fantasydb -f path/to/seed.sql
 ```
 
 - [Backend System Architecture & Design](./ARCHITECTURE.md)
+- [API Reference](./API_REFERENCE.md)
 - [Contribution Guidelines](./CONTRIBUTING.md)

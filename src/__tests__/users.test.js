@@ -13,9 +13,9 @@ describe('User Authentication Integration Tests', () => {
   let authToken;
 
 
-  it('should register a new user successfully (POST /api/users/register)', async () => {
+  it('should register a new user successfully (POST /api/v1/auth/register)', async () => {
     const response = await request(app)
-      .post('/api/users/register')
+        .post('/api/v1/auth/register')
       .send(testUser);
 
     expect(response.status).toBe(201);
@@ -27,7 +27,7 @@ describe('User Authentication Integration Tests', () => {
 
   it('should fail to register the same user twice (Duplicate constraint 23505)', async () => {
     const response = await request(app)
-      .post('/api/users/register')
+      .post('/api/v1/auth/register')
       .send(testUser); // Sending the same details
 
     expect(response.status).toBe(400);
@@ -35,9 +35,9 @@ describe('User Authentication Integration Tests', () => {
   });
 
 
-  it('should login successfully with valid credentials (POST /api/users/login)', async () => {
+  it('should login successfully with valid credentials (POST /api/v1/auth/login)', async () => {
     const response = await request(app)
-      .post('/api/users/login')
+        .post('/api/v1/auth/login')
       .send({
         username: testUser.username,
         password: testUser.password
@@ -54,7 +54,7 @@ describe('User Authentication Integration Tests', () => {
 
   it('should fail login with incorrect password', async () => {
     const response = await request(app)
-      .post('/api/users/login')
+      .post('/api/v1/auth/login')
       .send({
         username: testUser.username,
         password: 'WrongPassword999!'
@@ -65,9 +65,9 @@ describe('User Authentication Integration Tests', () => {
   });
 
 
-  it('should fetch current user profile with a valid token (GET /api/users/current)', async () => {
+  it('should fetch current user profile with a valid token (GET /api/v1/users/me)', async () => {
     const response = await request(app)
-      .get('/api/users/current')
+        .get('/api/v1/users/me')
       .set('Authorization', `Bearer ${authToken}`);
 
     expect(response.status).toBe(200);

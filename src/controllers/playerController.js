@@ -7,10 +7,11 @@ const getPlayers = asyncHandler(async(req, res) => {
     if(!userId) {
         throw ApiError.unauthorized('User ID is required.');
     }
-    const leagueIdNum = parseInt(req.query.fantasy_league_id, 10);
+    const leagueIdNum = parseInt(req.params.leagueId, 10);
     if(isNaN(leagueIdNum)) {
-        throw ApiError.badRequest('Valid query parameter fantasy_league_id is required.');
+        throw ApiError.badRequest('Valid league ID is required.');
     }
+    const undraftedOnly = req.query.undrafted === 'true';
 
     const getQuery = `
     SELECT
@@ -33,9 +34,10 @@ const getPlayers = asyncHandler(async(req, res) => {
         FROM fantasy_players
         WHERE league_id = $1
         AND is_active = TRUE
+        AND ($2::boolean = FALSE OR is_drafted = FALSE)
         ORDER BY player_name ASC;
     `;
-    const { rows } = await db.query(getQuery, [leagueIdNum]);
+    const { rows } = await db.query(getQuery, [leagueIdNum, undraftedOnly]);
     return res.status(200).json(rows);
 });
 

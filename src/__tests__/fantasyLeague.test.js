@@ -13,7 +13,7 @@ describe('Fantasy League End-to-End Integration Tests', () => {
 
     // Register User 1 (Commissioner)
     const user1Res = await request(app)
-      .post('/api/users/register')
+      .post('/api/v1/auth/register')
       .send({
         username: `commish_${unique}`,
         email: `commish_${unique}@example.com`,
@@ -24,7 +24,7 @@ describe('Fantasy League End-to-End Integration Tests', () => {
 
     // Register User 2 (League Member)
     const user2Res = await request(app)
-      .post('/api/users/register')
+      .post('/api/v1/auth/register')
       .send({
         username: `member_${unique}`,
         email: `member_${unique}@example.com`,
@@ -33,11 +33,11 @@ describe('Fantasy League End-to-End Integration Tests', () => {
     userTwoToken = user2Res.body.token;
   });
 
-  describe('POST /api/fantasy_league/create', () => {
+  describe('POST /api/v1/fantasy-leagues', () => {
     it('should return 400 if league name violates regex format or team count is invalid', async () => {
       // Test invalid league name (too short / special characters)
       const res1 = await request(app)
-        .post('/api/fantasy_league/create')
+        .post('/api/v1/fantasy-leagues')
         .set('Authorization', `Bearer ${userOneToken}`)
         .send({ name: 'ab', numOfTeams: 10 });
 
@@ -46,7 +46,7 @@ describe('Fantasy League End-to-End Integration Tests', () => {
 
       // Test invalid number of teams
       const res2 = await request(app)
-        .post('/api/fantasy_league/create')
+        .post('/api/v1/fantasy-leagues')
         .set('Authorization', `Bearer ${userOneToken}`)
         .send({ name: 'ValidLeague', numOfTeams: 'not-a-number' });
 
@@ -56,7 +56,7 @@ describe('Fantasy League End-to-End Integration Tests', () => {
 
     it('should successfully create a league, run transaction, seed players, and return invite code', async () => {
       const response = await request(app)
-        .post('/api/fantasy_league/create')
+        .post('/api/v1/fantasy-leagues')
         .set('Authorization', `Bearer ${userOneToken}`)
         .send({
           name: 'RBBL_League',
@@ -74,10 +74,10 @@ describe('Fantasy League End-to-End Integration Tests', () => {
     });
   });
 
-  describe('POST /api/fantasy_league/join', () => {
+  describe('POST /api/v1/fantasy-leagues/memberships', () => {
     it('should allow a second user to join the league using the invite code', async () => {
       const response = await request(app)
-        .post('/api/fantasy_league/join')
+        .post('/api/v1/fantasy-leagues/memberships')
         .set('Authorization', `Bearer ${userTwoToken}`)
         .send({
           invite_code: leagueInviteCode
@@ -90,7 +90,7 @@ describe('Fantasy League End-to-End Integration Tests', () => {
 
     it('should prevent a user from joining the same league twice (Conflict)', async () => {
       const response = await request(app)
-        .post('/api/fantasy_league/join')
+        .post('/api/v1/fantasy-leagues/memberships')
         .set('Authorization', `Bearer ${userTwoToken}`)
         .send({
           invite_code: leagueInviteCode
@@ -101,10 +101,10 @@ describe('Fantasy League End-to-End Integration Tests', () => {
     });
   });
 
-  describe('GET /api/fantasy_league/get_memberships', () => {
+  describe('GET /api/v1/fantasy-leagues/memberships', () => {
     it('should fetch all league memberships for the authenticated user', async () => {
       const response = await request(app)
-        .get('/api/fantasy_league/get_memberships')
+        .get('/api/v1/fantasy-leagues/memberships')
         .set('Authorization', `Bearer ${userTwoToken}`);
 
       expect(response.status).toBe(200);
@@ -114,10 +114,10 @@ describe('Fantasy League End-to-End Integration Tests', () => {
     });
   });
 
-  describe('GET /api/fantasy_league/:id', () => {
+  describe('GET /api/v1/fantasy-leagues/:leagueId', () => {
     it('should fetch complete league details including settings and commissioner info', async () => {
       const response = await request(app)
-        .get(`/api/fantasy_league/${createdLeagueId}`)
+        .get(`/api/v1/fantasy-leagues/${createdLeagueId}`)
         .set('Authorization', `Bearer ${userTwoToken}`);
 
       expect(response.status).toBe(200);

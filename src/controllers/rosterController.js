@@ -3,25 +3,25 @@ const asyncHandler = require('../middlewares/asyncHandler');
 const ApiError = require('../utils/ApiError');
 
 const addToRoster = asyncHandler(async(req, res) => {
-    const {fantasy_team_id, player_id} = req.body;
+    const {player_id} = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
         throw ApiError.unauthorized('User ID is required.');
     }
 
-    const teamIdNum = parseInt(fantasy_team_id, 10);
+    const teamIdNum = parseInt(req.params.teamId, 10);
     const playerIdNum = parseInt(player_id, 10);
 
     if (isNaN(teamIdNum) || isNaN(playerIdNum)) {
-        throw ApiError.badRequest('Valid fantasy_team_id and player_id are required.');
+        throw ApiError.badRequest('Valid team ID and player_id are required.');
     }
 
     const teamCheckQuery =`
         SELECT id, league_id FROM fantasy_teams
         WHERE id = $1 AND user_id = $2;
     `;
-    const teamResult = await db.query(teamCheckQuery, [fantasy_team_id, userId]);
+    const teamResult = await db.query(teamCheckQuery, [teamIdNum, userId]);
 
     if (teamResult.rows.length === 0) {
         throw ApiError.forbidden('You do not own this fantasy team or it does not exist.');
@@ -48,7 +48,7 @@ const addToRoster = asyncHandler(async(req, res) => {
     RETURNING id, fantasy_team_id, player_id, is_starter;
     `;
 
-    const { rows } = await db.query(insertQuery, [fantasy_team_id, player_id]);
+    const { rows } = await db.query(insertQuery, [teamIdNum, playerIdNum]);
 
     res.status(201).json({
         message: 'Player added to roster!',
@@ -62,9 +62,9 @@ const getFantasyTeamRoster = asyncHandler(async (req, res) => {
         throw ApiError.unauthorized('User ID is required.');
     }
 
-    const teamIdNum = parseInt(req.query.fantasy_team_id, 10);
+    const teamIdNum = parseInt(req.params.teamId, 10);
     if (isNaN(teamIdNum)) {
-        throw ApiError.badRequest('Valid query parameter fantasy_team_id is required.');
+        throw ApiError.badRequest('Valid team ID is required.');
     }
 
     const getQuery = `
@@ -94,45 +94,6 @@ const getFantasyTeamRoster = asyncHandler(async (req, res) => {
     return res.status(200).json({ roster: rows });
 });
 
-const getUndraftedPlayers = asyncHandler(async (req, res) => {
-    const userId = req.user?.id;
-    if (!userId) {
-        throw ApiError.unauthorized('User ID is required.');
-    }
-    const leagueIdNum = parseInt(req.query.fantasy_league_id, 10);
-    if (isNaN(leagueIdNum)) {
-        throw ApiError.badRequest('Valid query parameter fantasy_league_id is required.');
-    }
-
-    const getQuery = `
-        SELECT
-            id,
-            league_id,
-            original_player_id,
-            shirt_number,
-            player_name,
-            image_url,
-            dob,
-            nationality,
-            position,
-            sport_class,
-            gender,
-            bonus,
-            team_id,
-            is_active,
-            is_drafted,
-            drafted_by_team_id
-        FROM fantasy_players
-        WHERE league_id = $1
-        AND is_active = TRUE
-        AND is_drafted = FALSE
-        ORDER BY player_name ASC;
-    `;
-
-    const { rows } = await db.query(getQuery, [leagueIdNum]);
-    return res.status(200).json({ players: rows });
-});
-
 const saveRoster = asyncHandler(async(req, res) => {
     const userId = req.user?.id;
     if (!userId) {
@@ -144,7 +105,7 @@ const saveRoster = asyncHandler(async(req, res) => {
         throw ApiError.badRequest('Roster list cannot be empty.');
     }
 
-    const teamIdNum = parseInt(rosterList[0].fantasy_team_id, 10);
+    const teamIdNum = parseInt(req.params.teamId, 10);
     if (isNaN(teamIdNum)) {
         throw ApiError.badRequest('Invalid fantasy team ID.');
     }
@@ -167,7 +128,7 @@ const saveRoster = asyncHandler(async(req, res) => {
         const playerIds = [];
 
         for (const player of rosterList) {
-            ids.push(player.id);
+            ids.push(player.roster_id);
             isStarters.push(Boolean(player.is_starter));
             playerIds.push(player.player_id);
         }
@@ -244,7 +205,6 @@ const saveRoster = asyncHandler(async(req, res) => {
 module.exports = {
     addToRoster,
     getFantasyTeamRoster,
-    getUndraftedPlayers,
     saveRoster,
 
 }

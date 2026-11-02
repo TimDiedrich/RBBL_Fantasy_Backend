@@ -4,7 +4,7 @@ const { app } = require('../app');
 describe('Health Check Endpoint', () => {
     
     it('should return a successful health status', async () => {
-        const response = await request(app).get('/api/health/status');
+        const response = await request(app).get('/api/v1/health');
 
         // Expect either 200 (if DB is up) or handle it
         expect([200, 503]).toContain(response.status);
@@ -23,7 +23,7 @@ describe('Health Check Endpoint', () => {
 
 
     it('should return 404 for unknown routes', async () => {
-        const response = await request(app).get('/api/non-existent-route');
+        const response = await request(app).get('/api/v1/non-existent-route');
 
         expect(response.status).toBe(404);
         expect(response.body).toHaveProperty('error', 'Route not found');

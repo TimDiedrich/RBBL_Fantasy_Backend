@@ -11,7 +11,7 @@ describe('League Admin Settings Integration Tests', () => {
         
         // Register User 1 (Commissioner)
         const user1Res = await request(app)
-            .post('/api/users/register')
+            .post('/api/v1/auth/register')
             .send({
                 username: `commish_${unique}`,
                 email: `commish_${unique}@example.com`,
@@ -20,7 +20,7 @@ describe('League Admin Settings Integration Tests', () => {
         userOneToken = user1Res.body.token;
 
         const res1 = await request(app)
-            .post('/api/fantasy_league/create')
+            .post('/api/v1/fantasy-leagues')
             .set('Authorization', `Bearer ${userOneToken}`)
             .send({ name: 'abLeague', numOfTeams: 8 });
 
@@ -28,10 +28,10 @@ describe('League Admin Settings Integration Tests', () => {
         leagueId = res1.body.id
     });
 
-    describe('GET /api/leagueAdminSettings/:id', () => {
+    describe('GET /api/v1/fantasy-leagues/:leagueId/settings', () => {
         it('should return 200 with list of current admin setttings for the league', async() => {
             const resLeagueSettings1 = await request(app)
-                .get(`/api/league_admin_settings/${leagueId}`)
+                .get(`/api/v1/fantasy-leagues/${leagueId}/settings`)
                 .set('Authorization', `Bearer ${userOneToken}`);
             //console.log('[Test Debug] League Settings Response Body:', resLeagueSettings1.body);
             expect(resLeagueSettings1.status).toBe(200);

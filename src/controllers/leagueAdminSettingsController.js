@@ -8,7 +8,7 @@ const getLeagueSettings = asyncHandler(async(req, res) => {
         throw ApiError.unauthorized('User ID is required.');
     }
 
-    const leagueId = parseInt(req.params.id, 10);
+    const leagueId = parseInt(req.params.leagueId, 10);
 
     if (isNaN(leagueId)) {
         throw ApiError.badRequest('Invalid league ID.');

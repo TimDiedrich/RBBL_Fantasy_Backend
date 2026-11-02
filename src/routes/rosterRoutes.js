@@ -5,12 +5,10 @@ const { getFantasyTeamRoster, addToRoster, getUndraftedPlayers, saveRoster } = r
 
 const authenticateToken = require('../middlewares/authenticate'); // needed should probably be able to see other peoples rosters in the same league
 
-router.get('/team', authenticateToken, getFantasyTeamRoster); // just get all?
+router.get('/:teamId/roster', authenticateToken, getFantasyTeamRoster);
 
-router.post('/add_player', authenticateToken, addToRoster);
+router.post('/:teamId/roster', authenticateToken, addToRoster);
 
-router.get('/undrafted', authenticateToken, getUndraftedPlayers);
-
-router.put('/save', authenticateToken, saveRoster);
+router.put('/:teamId/roster', authenticateToken, saveRoster);
 
 module.exports = router;

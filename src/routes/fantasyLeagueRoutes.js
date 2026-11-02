@@ -3,19 +3,19 @@ const router = express.Router();
 const { createLeague, getLeagues, getLeagueById, updateLeagueById, joinLeagueByCode, getMemberships, getAllMembers } = require('../controllers/fantasyLeagueController');
 const authenticateToken = require('../middlewares/authenticate');
 
-router.get('/get_memberships', authenticateToken, getMemberships);
+router.get('/memberships', authenticateToken, getMemberships);
 
-router.get('/get_all_members', authenticateToken, getAllMembers);
+router.post('/memberships', authenticateToken, joinLeagueByCode);
 
-router.post('/create', authenticateToken, createLeague);
+router.get('/:leagueId/members', authenticateToken, getAllMembers);
 
-router.get('/all', authenticateToken, getLeagues);
+router.post('/', authenticateToken, createLeague);
 
-router.put('/:id', authenticateToken, updateLeagueById);
+router.get('/', authenticateToken, getLeagues);
 
-router.post('/join', authenticateToken, joinLeagueByCode);
+router.patch('/:leagueId', authenticateToken, updateLeagueById);
 
 // need to be last
-router.get('/:id', authenticateToken, getLeagueById);
+router.get('/:leagueId', authenticateToken, getLeagueById);
 
 module.exports = router;

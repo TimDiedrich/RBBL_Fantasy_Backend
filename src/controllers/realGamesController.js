@@ -35,7 +35,7 @@ const getAll = asyncHandler(async(req, res) => {
 
 const getRealGamesByWeek = asyncHandler(async(req, res) => {
 
-    const week = parseInt(req.params.week, 10);
+    const week = parseInt(req.query.week, 10);
     if (isNaN(week)) {
         throw ApiError.badRequest('Invalid week.');
     }
