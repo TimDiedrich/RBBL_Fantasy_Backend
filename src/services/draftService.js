@@ -4,6 +4,7 @@ const {
     requireLeagueMember,
     requireLeagueCommissioner
 } = require('./authorizationService');
+const { LEAGUE_DRAFT_STATUSES, DRAFT_ROOM_STATUSES } = require('../constants/draftStatuses');
 
 //active Node.js timers: { [leagueId]; TimeoutObject }
 const activeTimers = {};
@@ -62,21 +63,21 @@ const draftService = {
         // Update room state
         await client.query(
             `UPDATE draft_rooms
-            SET status = 'IN_PROGRESS',
+            SET status = $1,
                 current_round = 1,
                 current_pick_number = 1,
-                current_fantasy_team_id = $1,
-                pick_deadline = $2,
+                current_fantasy_team_id = $2,
+                pick_deadline = $3,
                 started_at = CURRENT_TIMESTAMP
-            WHERE league_id = $3`,
-            [firstTeamId, pickDeadline, leagueId]
+            WHERE league_id = $4`,
+            [DRAFT_ROOM_STATUSES.IN_PROGRESS, firstTeamId, pickDeadline, leagueId]
         );
 
         await client.query(
             `UPDATE fantasy_leagues
-            SET draft_status = 'IN_PROGRESS'
-            WHERE id = $1`,
-            [leagueId]
+            SET draft_status = $1
+            WHERE id = $2`,
+            [LEAGUE_DRAFT_STATUSES.DRAFTING, leagueId]
         );
 
         await client.query('COMMIT');
@@ -119,7 +120,7 @@ const draftService = {
             );
 
             const room = roomRes.rows[0];
-            if (!room || room.status !== 'IN_PROGRESS') {
+            if (!room || room.status !== DRAFT_ROOM_STATUSES.IN_PROGRESS) {
             throw new Error('Draft is not active');
             }
 
@@ -198,17 +199,17 @@ const draftService = {
                 await client.query(
                     `
                     UPDATE draft_rooms
-                    SET status = 'COMPLETED',
+                    SET status = $1,
                     completed_at = CURRENT_TIMESTAMP
-                    WHERE league_id =$1`,
-                    [leagueId]
+                    WHERE league_id =$2`,
+                    [DRAFT_ROOM_STATUSES.COMPLETED, leagueId]
                 );
 
                 await client.query(`
                     UPDATE fantasy_leagues
-                    SET draft_status = 'POSTDRAFT'
-                    WHERE id = $1`,
-                    [leagueId]
+                    SET draft_status = $1
+                    WHERE id = $2`,
+                    [LEAGUE_DRAFT_STATUSES.POSTDRAFT, leagueId]
                 );
 
                 await client.query('COMMIT');
@@ -323,8 +324,8 @@ const draftService = {
         const client = await db.connect();
         try{
             const roomRes = await client.query(
-                `SELECT current_fantasy_team_id FROM draft_rooms WHERE league_id = $1 AND status = 'IN_PROGRESS'`,
-                [leagueId]
+                `SELECT current_fantasy_team_id FROM draft_rooms WHERE league_id = $1 AND status = $2`,
+                [leagueId, DRAFT_ROOM_STATUSES.IN_PROGRESS]
             );
 
             if (!roomRes.rows.length) return;
@@ -432,7 +433,7 @@ async function getDraftRoomState(leagueId) {
 
         // Default draft room metadata if no active draft room exists yet
         let draftInfo = {
-            status: 'NOT_STARTED',
+            status: DRAFT_ROOM_STATUSES.NOT_STARTED,
             scheduled_for: null,
             currentRound: 1,
             currentPickNumber: 1,
@@ -701,15 +702,19 @@ const generateDraftOrder = async (dbClient, leagueId, scheduledFor, randomize = 
 
     const set_draft_room_scheduled_query = `
         INSERT INTO draft_rooms (league_id, status, scheduled_for)
-        VALUES ($1, 'SCHEDULED', $2)
+        VALUES ($1, $2, $3)
         ON CONFLICT (league_id) DO UPDATE
             SET
-                status = 'SCHEDULED',
-                scheduled_for = $2,
+                status = $2,
+                scheduled_for = $3,
                 updated_at = CURRENT_TIMESTAMP;
     `;
 
-    const { rows } = await dbClient.query(set_draft_room_scheduled_query, [leagueId, scheduledFor]);
+    const { rows } = await dbClient.query(set_draft_room_scheduled_query, [
+        leagueId,
+        DRAFT_ROOM_STATUSES.SCHEDULED,
+        scheduledFor
+    ]);
 
     const insertQuery = `
         INSERT INTO draft_order (league_id, fantasy_team_id, draft_position)

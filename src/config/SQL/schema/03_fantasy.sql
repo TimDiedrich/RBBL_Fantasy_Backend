@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS draft_rooms (
     league_id INT PRIMARY KEY REFERENCES fantasy_leagues(id) ON DELETE CASCADE,
 	
     -- Status tracking
-    status VARCHAR(20) DEFAULT 'NOT_STARTED', -- 'NOT_STARTED', 'SCHEDULED', 'PAUSED', 'IN_PROGRESS', 'COMPLETED'
+	status draft_room_status DEFAULT 'NOT_STARTED',
     
     -- State & Turn Tracking
     current_round INT DEFAULT 1,

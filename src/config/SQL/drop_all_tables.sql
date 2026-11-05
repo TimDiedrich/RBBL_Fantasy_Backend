@@ -1,5 +1,7 @@
 
 
+DROP TABLE IF EXISTS draft_rooms CASCADE;
+DROP TYPE IF EXISTS draft_room_status;
 DROP TYPE IF EXISTS match_status;
 -- Reverse order deletion:
 -- Pro Tip: Alternatively, you can run DROP TABLE IF EXISTS users CASCADE;

@@ -164,6 +164,17 @@ describe('Fantasy League End-to-End Integration Tests', () => {
       }
     });
 
+    it('should reject a draft-room status as a league draft status', async () => {
+      const response = await request(app)
+        .patch(`/api/v1/fantasy-leagues/${createdLeagueId}`)
+        .set('Authorization', `Bearer ${userOneToken}`)
+        .send({ draft_status: 'IN_PROGRESS' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('BAD_REQUEST');
+      expect(response.body.error.message).toBe('Invalid league draft status.');
+    });
+
     it('should deny league updates to a member who is not the commissioner', async () => {
       const response = await request(app)
         .patch(`/api/v1/fantasy-leagues/${createdLeagueId}`)

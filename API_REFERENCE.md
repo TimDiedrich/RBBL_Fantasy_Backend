@@ -90,7 +90,7 @@ Registration and login are limited per IP over 15 minutes. In production, the li
 
 `GET /fantasy-leagues/{leagueId}` returns `{ "data": { ... } }` with league metadata, `commissioner_username`, and a nested `settings` object. The caller must be a member of the league.
 
-`PATCH /fantasy-leagues/{leagueId}` accepts any subset of `league_name`, `draft_status`, `draft_date`, and `needs_new_invite_code`. Only the commissioner may update the league. Setting `draft_status` to `SCHEDULED` together with `draft_date` generates a randomized draft order and schedules the draft room. Success returns the updated league object inside `data`. Supported `draft_status` values are `PREDRAFT`, `SCHEDULED`, `DRAFTING`, `POSTDRAFT`, and `COMPLETED`.
+`PATCH /fantasy-leagues/{leagueId}` accepts any subset of `league_name`, `draft_status`, `draft_date`, and `needs_new_invite_code`. Only the commissioner may update the league. Supported league `draft_status` values are `PREDRAFT`, `SCHEDULED`, `DRAFTING`, `POSTDRAFT`, and `COMPLETED`; `IN_PROGRESS` is not a league status. Setting `draft_status` to `SCHEDULED` together with `draft_date` generates a randomized draft order and schedules the draft room. Starting the draft sets the league status to `DRAFTING` and the room status to `IN_PROGRESS`; when the draft ends, the room becomes `COMPLETED` and the league becomes `POSTDRAFT`. Success returns the updated league object inside `data`.
 
 `POST /fantasy-leagues/memberships` accepts `{ "invite_code": "AB12CD34" }`. The code is trimmed and uppercased. Success is `200` with `{ "data": { "message": "...", "league": {...} } }`; an unknown code returns `404`, and an existing membership returns `409`.
 
@@ -170,6 +170,7 @@ Socket.IO uses the same server origin and the default namespace. A JWT is requir
 | Server to room | `draft:completed` | `{ "message": "The draft has ended!" }` |
 
 Only league members may join a draft room, and only the commissioner may start the draft. The room-state payload contains draft status, scheduled time, current turn metadata, and available players. Pick deadlines and event payload details are currently defined in `src/services/draftService.js` and may evolve with that implementation.
+Only league members may join a draft room, and only the commissioner may start the draft. Room state uses `NOT_STARTED`, `SCHEDULED`, `PAUSED`, `IN_PROGRESS`, or `COMPLETED`; this is distinct from league `draft_status`, which uses `PREDRAFT`, `SCHEDULED`, `DRAFTING`, `POSTDRAFT`, or `COMPLETED`. The room-state payload also contains scheduled time, current turn metadata, and available players. Pick deadlines and event payload details are currently defined in `src/services/draftService.js` and may evolve with that implementation.
 
 ## Contract caveats
 

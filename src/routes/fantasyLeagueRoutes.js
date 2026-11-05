@@ -162,7 +162,9 @@ router.get('/', authenticateToken, getLeagues);
  *             type: object
  *             properties:
  *               league_name: { type: string }
- *               draft_status: { type: string }
+ *               draft_status:
+ *                 type: string
+ *                 enum: [PREDRAFT, SCHEDULED, DRAFTING, POSTDRAFT, COMPLETED]
  *               draft_date: { type: string, format: date-time }
  *               needs_new_invite_code: { type: boolean }
  *     responses:

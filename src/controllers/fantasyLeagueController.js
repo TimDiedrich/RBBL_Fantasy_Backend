@@ -4,6 +4,7 @@ const ApiError = require('../utils/ApiError');
 const sendData = require('../utils/sendData');
 const { generateDraftOrder } = require('../services/draftService');
 const { requireLeagueMember } = require('../services/authorizationService');
+const { LEAGUE_DRAFT_STATUSES } = require('../constants/draftStatuses');
 
 const crypto = require('crypto');
 
@@ -167,6 +168,9 @@ const updateLeagueById = asyncHandler(async(req, res) => {
     }
 
     const { league_name, draft_status, draft_date, needs_new_invite_code } = req.body;
+    if (draft_status && !Object.values(LEAGUE_DRAFT_STATUSES).includes(draft_status)) {
+        throw ApiError.badRequest('Invalid league draft status.');
+    }
     const newInviteCode = needs_new_invite_code ? generateInviteCode() : null;
 
     const client = await db.connect();

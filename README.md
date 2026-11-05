@@ -78,6 +78,8 @@ psql -U postgres -d fantasydb -f path/to/schema.sql
 psql -U postgres -d fantasydb -f path/to/seed.sql
 ```
 
+For an existing database, apply `src/config/SQL/migrations/20261105_draft_room_status_enum.sql` once to constrain draft-room statuses. Fresh databases receive the enum through schema initialization.
+
 - [Backend System Architecture & Design](./ARCHITECTURE.md)
 - [API Reference](./API_REFERENCE.md)
 - [Contribution Guidelines](./CONTRIBUTING.md)
