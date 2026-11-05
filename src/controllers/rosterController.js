@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const asyncHandler = require('../middlewares/asyncHandler');
 const ApiError = require('../utils/ApiError');
+const sendData = require('../utils/sendData');
 
 const addToRoster = asyncHandler(async(req, res) => {
     const {player_id} = req.body;
@@ -50,7 +51,7 @@ const addToRoster = asyncHandler(async(req, res) => {
 
     const { rows } = await db.query(insertQuery, [teamIdNum, playerIdNum]);
 
-    res.status(201).json({
+    sendData(res, 201, {
         message: 'Player added to roster!',
         roster: rows[0]
     });
@@ -91,7 +92,7 @@ const getFantasyTeamRoster = asyncHandler(async (req, res) => {
     `;
 
     const { rows } = await db.query(getQuery, [teamIdNum]);
-    return res.status(200).json({ roster: rows });
+    return sendData(res, 200, rows);
 });
 
 const saveRoster = asyncHandler(async(req, res) => {
@@ -193,7 +194,7 @@ const saveRoster = asyncHandler(async(req, res) => {
 
         const { rows } = await client.query(getQuery, [teamIdNum]);
         await client.query('COMMIT');
-        return res.status(200).json({ roster: rows });
+        return sendData(res, 200, rows);
     } catch(error) {
         await client.query('ROLLBACK');
         throw error;

@@ -17,7 +17,7 @@ describe('League Admin Settings Integration Tests', () => {
                 email: `commish_${unique}@example.com`,
                 password: 'Arandompassword23!'
             });
-        userOneToken = user1Res.body.token;
+        userOneToken = user1Res.body.data.token;
 
         const res1 = await request(app)
             .post('/api/v1/fantasy-leagues')
@@ -25,7 +25,7 @@ describe('League Admin Settings Integration Tests', () => {
             .send({ name: 'abLeague', numOfTeams: 8 });
 
         //console.log('[Test Debug] League Creation Response:', res1.body);
-        leagueId = res1.body.id
+        leagueId = res1.body.data.id
     });
 
     describe('GET /api/v1/fantasy-leagues/:leagueId/settings', () => {
@@ -35,7 +35,7 @@ describe('League Admin Settings Integration Tests', () => {
                 .set('Authorization', `Bearer ${userOneToken}`);
             //console.log('[Test Debug] League Settings Response Body:', resLeagueSettings1.body);
             expect(resLeagueSettings1.status).toBe(200);
-            expect(resLeagueSettings1.body).toHaveProperty('league_id');
+            expect(resLeagueSettings1.body.data).toHaveProperty('league_id');
         });
 
     });

@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const asyncHandler = require('../middlewares/asyncHandler');
 const ApiError = require('../utils/ApiError');
+const sendData = require('../utils/sendData');
 
 const getPlayers = asyncHandler(async(req, res) => {
     const userId = req.user?.id;
@@ -38,7 +39,7 @@ const getPlayers = asyncHandler(async(req, res) => {
         ORDER BY player_name ASC;
     `;
     const { rows } = await db.query(getQuery, [leagueIdNum, undraftedOnly]);
-    return res.status(200).json(rows);
+    return sendData(res, 200, rows);
 });
 
 module.exports = {

@@ -20,7 +20,7 @@ describe('Fantasy League End-to-End Integration Tests', () => {
         password: 'Arandompassword23!'
       });
 
-    userOneToken = user1Res.body.token;
+    userOneToken = user1Res.body.data.token;
 
     // Register User 2 (League Member)
     const user2Res = await request(app)
@@ -30,7 +30,7 @@ describe('Fantasy League End-to-End Integration Tests', () => {
         email: `member_${unique}@example.com`,
         password: 'Arandompassword23!'
       });
-    userTwoToken = user2Res.body.token;
+    userTwoToken = user2Res.body.data.token;
   });
 
   describe('POST /api/v1/fantasy-leagues', () => {
@@ -64,13 +64,13 @@ describe('Fantasy League End-to-End Integration Tests', () => {
         });
 
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id');
-      expect(response.body).toHaveProperty('invite_code');
-      expect(response.body.league_name).toBe('RBBL_League');
-      expect(response.body.max_number_teams).toBe(8);
+      expect(response.body.data).toHaveProperty('id');
+      expect(response.body.data).toHaveProperty('invite_code');
+      expect(response.body.data.league_name).toBe('RBBL_League');
+      expect(response.body.data.max_number_teams).toBe(8);
 
-      createdLeagueId = response.body.id;
-      leagueInviteCode = response.body.invite_code;
+      createdLeagueId = response.body.data.id;
+      leagueInviteCode = response.body.data.invite_code;
     });
   });
 
@@ -84,8 +84,8 @@ describe('Fantasy League End-to-End Integration Tests', () => {
         });
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('message', 'Succesfully joined league!');
-      expect(response.body.league).toHaveProperty('id', createdLeagueId);
+      expect(response.body.data).toHaveProperty('message', 'Succesfully joined league!');
+      expect(response.body.data.league).toHaveProperty('id', createdLeagueId);
     });
 
     it('should prevent a user from joining the same league twice (Conflict)', async () => {
@@ -108,9 +108,9 @@ describe('Fantasy League End-to-End Integration Tests', () => {
         .set('Authorization', `Bearer ${userTwoToken}`);
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThan(0);
-      expect(response.body[0]).toHaveProperty('league_name', 'RBBL_League');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.length).toBeGreaterThan(0);
+      expect(response.body.data[0]).toHaveProperty('league_name', 'RBBL_League');
     });
   });
 
@@ -121,10 +121,10 @@ describe('Fantasy League End-to-End Integration Tests', () => {
         .set('Authorization', `Bearer ${userTwoToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('id', createdLeagueId);
-      expect(response.body).toHaveProperty('commissioner_username');
-      expect(response.body).toHaveProperty('settings');
-      expect(response.body.settings).toHaveProperty('max_roster_size');
+      expect(response.body.data).toHaveProperty('id', createdLeagueId);
+      expect(response.body.data).toHaveProperty('commissioner_username');
+      expect(response.body.data).toHaveProperty('settings');
+      expect(response.body.data.settings).toHaveProperty('max_roster_size');
     });
   });
 

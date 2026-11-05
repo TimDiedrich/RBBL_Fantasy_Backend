@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const asyncHandler = require('../middlewares/asyncHandler');
 const ApiError = require('../utils/ApiError');
+const sendData = require('../utils/sendData');
 const { generateDraftOrder } = require('../services/draftService');
 
 const crypto = require('crypto');
@@ -79,7 +80,7 @@ const createLeague = asyncHandler(async(req, res) => {
 
         await client.query('COMMIT');
 
-        res.status(201).json(newLeague);
+        sendData(res, 201, newLeague);
 
     } catch (error){
         await client.query('ROLLBACK');
@@ -102,9 +103,7 @@ const getLeagues = asyncHandler(async(req, res) => {
 
     const { rows } = await db.query(getQuery, [userId]);
 
-    res.status(200).json({
-        leagues: rows
-    });
+    sendData(res, 200, rows);
 });
 
 const getLeagueById = asyncHandler(async(req, res) => {
@@ -152,7 +151,7 @@ const getLeagueById = asyncHandler(async(req, res) => {
             throw ApiError.notFound('League not found.');
         }
 
-        return res.status(200).json(rows[0]);
+        return sendData(res, 200, rows[0]);
 });
 
 const updateLeagueById = asyncHandler(async(req, res) => {
@@ -238,7 +237,7 @@ const updateLeagueById = asyncHandler(async(req, res) => {
 
         await client.query('COMMIT');
 
-        return res.status(200).json(rows[0]);
+        return sendData(res, 200, rows[0]);
 
     } catch (error) {
         await client.query('ROLLBACK');
@@ -300,7 +299,7 @@ const joinLeagueByCode = asyncHandler(async (req, res) => {
         [league.id, userId, 'MEMBER']
     );
 
-    return res.status(200).json({
+    return sendData(res, 200, {
         message: 'Succesfully joined league!', 
         league: league
     });
@@ -332,7 +331,7 @@ const getMemberships = asyncHandler( async(req, res) => {
 
     const { rows } = await db.query(getQuery, [userId]);
 
-    res.status(200).json(rows);
+    sendData(res, 200, rows);
 });
 
 const getAllMembers = asyncHandler(async(req, res) => {
@@ -377,7 +376,7 @@ const getAllMembers = asyncHandler(async(req, res) => {
 
     const { rows } = await db.query(getQuery, [leagueId]);
 
-    res.status(200).json(rows);
+    sendData(res, 200, rows);
 });
 
 

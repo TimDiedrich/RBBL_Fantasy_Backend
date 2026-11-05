@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const asyncHandler = require('../middlewares/asyncHandler');
 const ApiError = require('../utils/ApiError');
+const sendData = require('../utils/sendData');
 
 const createTeam = asyncHandler(async(req, res) => {
     const { league_id, team_name } = req.body;
@@ -26,7 +27,7 @@ const createTeam = asyncHandler(async(req, res) => {
     const { rows } = await db.query(insertQuery, [league_id, userId, cleanTeamName]);
     const newTeam = rows[0];
 
-    res.status(201).json(newTeam); // no wrapping need
+    sendData(res, 201, newTeam);
 });
 
 const getTeams = asyncHandler(async(req, res) => {
@@ -40,9 +41,7 @@ const getTeams = asyncHandler(async(req, res) => {
     `;
 
     const { rows } = await db.query(getQuery, [userId]);
-    res.status(200).json({
-        teams: rows
-    });
+    sendData(res, 200, rows);
 
 });
 

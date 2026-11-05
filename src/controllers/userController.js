@@ -5,6 +5,7 @@ const { checkPasswordStrength } = require('../utils/passwordChecker');
 const db = require('../config/db');
 const asyncHandler = require('../middlewares/asyncHandler');
 const ApiError = require('../utils/ApiError');
+const sendData = require('../utils/sendData');
 
 const registerUser = asyncHandler(async (req, res) => {
     const { username, email, password } = req.body;
@@ -60,7 +61,7 @@ const registerUser = asyncHandler(async (req, res) => {
             { expiresIn: '7d' } // What time for expiration should I use
         );
 
-        res.status(201).json({
+        sendData(res, 201, {
             message: 'User registered successfully!',
             user: newUser,
             token,
@@ -114,7 +115,7 @@ const loginUser = asyncHandler(async (req, res) => {
         { expiresIn: '7d' }
     );
 
-    return res.status(200).json({
+    return sendData(res, 200, {
         token,
         user: {
             id: foundUser.id,
@@ -136,7 +137,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
     const { rows } = await db.query(getQuery, [userId]);
 
-    return res.status(200).json(rows[0]);
+    return sendData(res, 200, rows[0]);
 });
 
 module.exports = {

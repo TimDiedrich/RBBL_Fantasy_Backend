@@ -2,6 +2,7 @@ const db = require('../config/db');
 const asyncHandler = require('../middlewares/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const { getWeekDateRange } = require('../utils/dateHelpers');
+const sendData = require('../utils/sendData');
 
 const getAll = asyncHandler(async(req, res) => {
     const getQuery = `
@@ -26,10 +27,7 @@ const getAll = asyncHandler(async(req, res) => {
 
     const { rows } = await db.query(getQuery, []);
 
-    return res.status(200).json({ 
-        week_number: 0,
-        matches: rows
-    });
+    return sendData(res, 200, rows, { weekNumber: 0 });
 });
 
 
@@ -71,10 +69,7 @@ const getRealGamesByWeek = asyncHandler(async(req, res) => {
 
     const { rows } = await db.query(getQuery, [week]);
 
-    return res.status(200).json({ 
-        week_number: week,
-        matches: rows
-    });
+    return sendData(res, 200, rows, { weekNumber: week });
 });
 
 module.exports = {

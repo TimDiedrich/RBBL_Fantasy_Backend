@@ -19,9 +19,9 @@ describe('User Authentication Integration Tests', () => {
       .send(testUser);
 
     expect(response.status).toBe(201);
-    expect(response.body).toHaveProperty('message', 'User registered successfully!');
-    expect(response.body).toHaveProperty('token');
-    expect(response.body.user).toHaveProperty('username', testUser.username);
+    expect(response.body.data).toHaveProperty('message', 'User registered successfully!');
+    expect(response.body.data).toHaveProperty('token');
+    expect(response.body.data.user).toHaveProperty('username', testUser.username);
   });
 
 
@@ -44,11 +44,11 @@ describe('User Authentication Integration Tests', () => {
       });
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('token');
-    expect(response.body.user).toHaveProperty('username', testUser.username);
+    expect(response.body.data).toHaveProperty('token');
+    expect(response.body.data.user).toHaveProperty('username', testUser.username);
     
     // Save token for authenticated route tests
-    authToken = response.body.token;
+    authToken = response.body.data.token;
   });
 
 
@@ -71,8 +71,8 @@ describe('User Authentication Integration Tests', () => {
       .set('Authorization', `Bearer ${authToken}`);
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('username', testUser.username);
-    expect(response.body).toHaveProperty('email', testUser.email);
+    expect(response.body.data).toHaveProperty('username', testUser.username);
+    expect(response.body.data).toHaveProperty('email', testUser.email);
   });
 
 });

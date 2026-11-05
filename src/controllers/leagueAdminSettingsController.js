@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const asyncHandler = require('../middlewares/asyncHandler');
 const ApiError = require('../utils/ApiError');
+const sendData = require('../utils/sendData');
 
 const getLeagueSettings = asyncHandler(async(req, res) => {
     const userId = req.user?.id;
@@ -34,7 +35,7 @@ const getLeagueSettings = asyncHandler(async(req, res) => {
 
     const { rows } = await db.query(getQuery, [leagueId]);
 
-    return res.status(200).json(rows[0]);
+    return sendData(res, 200, rows[0]);
 })
 
 module.exports = {
