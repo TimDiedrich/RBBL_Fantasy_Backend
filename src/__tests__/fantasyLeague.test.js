@@ -42,7 +42,8 @@ describe('Fantasy League End-to-End Integration Tests', () => {
         .send({ name: 'ab', numOfTeams: 10 });
 
       expect(res1.status).toBe(400);
-      expect(res1.body.error).toContain('League name must be 3-30 characters');
+      expect(res1.body.error.code).toBe('BAD_REQUEST');
+      expect(res1.body.error.message).toContain('League name must be 3-30 characters');
 
       // Test invalid number of teams
       const res2 = await request(app)
@@ -51,7 +52,10 @@ describe('Fantasy League End-to-End Integration Tests', () => {
         .send({ name: 'ValidLeague', numOfTeams: 'not-a-number' });
 
       expect(res2.status).toBe(400);
-      expect(res2.body.error).toBe('Invalid number of teams.');
+      expect(res2.body.error).toEqual({
+        code: 'BAD_REQUEST',
+        message: 'Invalid number of teams.'
+      });
     });
 
     it('should successfully create a league, run transaction, seed players, and return invite code', async () => {
@@ -97,7 +101,8 @@ describe('Fantasy League End-to-End Integration Tests', () => {
         });
 
       expect(response.status).toBe(409); // Conflict error
-      expect(response.body.error).toContain('You are already a member');
+      expect(response.body.error.code).toBe('CONFLICT');
+      expect(response.body.error.message).toContain('You are already a member');
     });
   });
 

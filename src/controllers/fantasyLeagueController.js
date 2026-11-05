@@ -25,14 +25,12 @@ const createLeague = asyncHandler(async(req, res) => {
     }
 
     if(!cleanLeagueName || !userId){
-        return res.status(400).json({ error: 'League name and user ID are required.'})
+        throw ApiError.badRequest('League name and user ID are required.');
     }
 
     const leagueRegex = /^[a-zA-Z0-9_]{3,30}$/;
     if(!leagueRegex.test(cleanLeagueName)) {
-        return res.status(400).json({
-            error: 'League name must be 3-30 characters long and contain only letters, numbers, or underscores.'
-        });
+        throw ApiError.badRequest('League name must be 3-30 characters long and contain only letters, numbers, or underscores.');
     }
 
     const client = await db.connect();

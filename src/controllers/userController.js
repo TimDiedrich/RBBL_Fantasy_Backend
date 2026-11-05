@@ -52,7 +52,7 @@ const registerUser = asyncHandler(async (req, res) => {
         const jwtSecret = process.env.JWT_SECRET;
         if (!jwtSecret) {
             console.error('FATAL ERROR: JWT_SECRET environment variable is missing!');
-            return res.status(500).json({ error: 'Internal server configuration error.' });
+            throw ApiError.internal();
         }
 
         const token = jwt.sign(
@@ -69,10 +69,9 @@ const registerUser = asyncHandler(async (req, res) => {
 
     } catch (error) {
         if(error.code === '23505'){
-            return res.status(400).json({ error: 'Username or email already exists.' });
+            throw ApiError.conflict('Username or email already exists.');
         }
-        console.error('Registration Error:', error.message);
-        res.status(500).json({ error: 'Internal server error' });
+        throw error;
     }
 });
 
@@ -95,18 +94,18 @@ const loginUser = asyncHandler(async (req, res) => {
     const foundUser = rows[0];
 
     if(!foundUser){
-        return res.status(401).json({ error: 'Invalid username or password.' });
+        throw ApiError.unauthorized('Invalid username or password.');
     }
 
     const isMatch = await bcrypt.compare(rawPassword, foundUser.pw_hash)
     if (!isMatch) {
-        return res.status(401).json({ error: 'Invalid username or password.' });
+        throw ApiError.unauthorized('Invalid username or password.');
     }
 
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
         console.error('[Security Error] JWT_SECRET is missing');
-        return res.status(500).json({ error: 'Internal server configuration error.' });
+        throw ApiError.internal();
     }
 
     const token = jwt.sign(

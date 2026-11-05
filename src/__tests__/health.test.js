@@ -26,6 +26,9 @@ describe('Health Check Endpoint', () => {
         const response = await request(app).get('/api/v1/non-existent-route');
 
         expect(response.status).toBe(404);
-        expect(response.body).toHaveProperty('error', 'Route not found');
+        expect(response.body.error).toEqual({
+            code: 'NOT_FOUND',
+            message: 'Route not found.'
+        });
     });
 });

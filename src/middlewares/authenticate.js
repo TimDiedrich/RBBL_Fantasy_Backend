@@ -1,11 +1,12 @@
 const jwt = require('jsonwebtoken');
+const ApiError = require('../utils/ApiError');
 
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-        return res.status(401).json({ error: 'Access denied. No token provided.' });
+        return next(ApiError.unauthorized('Access token is required.'));
     }
 
     try {
@@ -14,8 +15,8 @@ const authenticateToken = (req, res, next) => {
         req.user = { id: decoded.userId, username: decoded.username };
 
         next();
-    } catch (error) {
-        return res.status(403).json({ error: 'Invalid or expired token.' });
+    } catch {
+        return next(ApiError.unauthorized('Access token is invalid or expired.'));
     }
 };
 

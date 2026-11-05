@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
 
 const errorHandler = require('./middlewares/errorHandler');
+const ApiError = require('./utils/ApiError');
 
 const playerRoutes = require('./routes/playerRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -104,7 +105,7 @@ app.use('/api/v1', apiRouter);
 
 // 404
 app.use((req, res, next) => {
-    res.status(404).json({ error: 'Route not found' });
+    next(ApiError.notFound('Route not found.'));
 });
 
 // Global Error Handler MUST be last

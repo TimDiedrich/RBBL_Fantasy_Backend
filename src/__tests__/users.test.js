@@ -30,8 +30,11 @@ describe('User Authentication Integration Tests', () => {
       .post('/api/v1/auth/register')
       .send(testUser); // Sending the same details
 
-    expect(response.status).toBe(400);
-    expect(response.body).toHaveProperty('error', 'Username or email already exists.');
+    expect(response.status).toBe(409);
+    expect(response.body.error).toEqual({
+      code: 'CONFLICT',
+      message: 'Username or email already exists.'
+    });
   });
 
 
@@ -61,7 +64,10 @@ describe('User Authentication Integration Tests', () => {
       });
 
     expect(response.status).toBe(401);
-    expect(response.body).toHaveProperty('error', 'Invalid username or password.');
+    expect(response.body.error).toEqual({
+      code: 'UNAUTHENTICATED',
+      message: 'Invalid username or password.'
+    });
   });
 
 
@@ -73,6 +79,16 @@ describe('User Authentication Integration Tests', () => {
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveProperty('username', testUser.username);
     expect(response.body.data).toHaveProperty('email', testUser.email);
+  });
+
+  it('should return the standard error body when authentication is missing', async () => {
+    const response = await request(app).get('/api/v1/users/me');
+
+    expect(response.status).toBe(401);
+    expect(response.body.error).toEqual({
+      code: 'UNAUTHENTICATED',
+      message: 'Access token is required.'
+    });
   });
 
 });

@@ -1,13 +1,16 @@
 const rateLimit = require('express-rate-limit');
+const ApiError = require('../utils/ApiError');
+
+const createRateLimitHandler = (message) => (req, res, next) => {
+    next(ApiError.tooManyRequests(message));
+};
 
 const registerLimiter = rateLimit({
     windowMs: 15*60*1000, // 15 minutes window
     max: process.env.NODE_ENV === 'production' ? 5 : 100, // 5 registrations per IP adress
     standardHeaders: true,
     legacyHeaders: false, 
-    message: {
-        error: 'Too many account creation attempts from this IP. Please try again after 15 minutes.'
-    }
+    handler: createRateLimitHandler('Too many account creation attempts from this IP. Please try again after 15 minutes.')
 });
 
 const loginLimiter = rateLimit({
@@ -15,9 +18,7 @@ const loginLimiter = rateLimit({
     max: process.env.NODE_ENV === 'production' ? 10 : 100,
     standardHeaders: true,
     legacyHeaders: false,
-    message: {
-        error: 'Too many login attempts. Please try again later.'
-    }
+    handler: createRateLimitHandler('Too many login attempts. Please try again later.')
 });
 
 module.exports = {

@@ -139,17 +139,21 @@ All entries are applied to the team identified by `{teamId}`. The caller must ow
 
 ## Errors
 
-An unknown route returns `404` with `{ "error": "Route not found" }`. The authentication middleware returns `401` when the token is missing and `403` when it is invalid or expired. Most controller errors use this shape:
+All HTTP errors use the same structure. The HTTP status code is authoritative; `error.code` is a stable machine-readable value. `details` is optional and is intended for safe, field-specific validation information.
 
 ```json
 {
-  "status": "error",
-  "statusCode": 400,
-  "error": "Description of the error"
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "The request is invalid.",
+    "details": {
+      "field": "email"
+    }
+  }
 }
 ```
 
-The stack field is additionally included in development. Some handlers return their own `{ "error": "..." }` shape instead. Registration and login rate limits return `429`.
+Common codes are `BAD_REQUEST` (`400`), `UNAUTHENTICATED` (`401`), `FORBIDDEN` (`403`), `NOT_FOUND` (`404`), `CONFLICT` (`409`), `TOO_MANY_REQUESTS` (`429`), and `INTERNAL_ERROR` (`500`). Invalid or missing Bearer tokens return `401`. Rate limits return `429`. Unexpected server and database errors return a generic message; internal details are logged, not sent to clients. Health-check responses retain their operational top-level shape.
 
 ## Draft Socket.IO events
 
