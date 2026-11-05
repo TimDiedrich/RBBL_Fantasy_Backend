@@ -22,7 +22,6 @@ const addToRoster = asyncHandler(async(req, res) => {
         throw ApiError.badRequest('Valid team ID and player_id are required.');
     }
 
-    //const teamCheckQuery =`
     const team = await requireTeamOwner(teamIdNum, userId);
     const leagueId = Number(team.league_id);
 
@@ -33,15 +32,13 @@ const addToRoster = asyncHandler(async(req, res) => {
     if (playerResult.rowCount === 0) {
         throw ApiError.notFound('Player not found in this league.');
     }
-    //const playerCheck = await db.query(playerCheckQuery, [playerIdNum, leagueId]);
-
     const playerCheckQuery = `
         SELECT r.id 
         FROM rosters r
         JOIN fantasy_teams ft ON r.fantasy_team_id = ft.id
         WHERE r.player_id = $1 AND ft.league_id = $2;
     `;
-    const playerCheck = await db.query(playerCheckQuery, [playerIdNum, league_id]);
+    const playerCheck = await db.query(playerCheckQuery, [playerIdNum, leagueId]);
 
     if (playerCheck.rows.length > 0) {
         throw ApiError.conflict('This player has already been drafted by a team in this league.');
@@ -123,7 +120,6 @@ const saveRoster = asyncHandler(async(req, res) => {
     try {
         await client.query('BEGIN');
 
-        //const teamOwnerCheck = await client.query(
         await requireTeamOwner(teamIdNum, userId, client);
 
         const ids = [];

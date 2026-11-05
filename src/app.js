@@ -4,9 +4,11 @@ const http = require('http');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
+const swaggerUi = require('swagger-ui-express');
 
 const errorHandler = require('./middlewares/errorHandler');
 const ApiError = require('./utils/ApiError');
+const swaggerSpec = require('./swaggerSpec');
 
 const playerRoutes = require('./routes/playerRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -100,6 +102,9 @@ apiRouter.use('/fantasy-teams', fantasyTeamRoutes);
 apiRouter.use('/fantasy-teams', rosterRoutes);
 apiRouter.use('/real-games', realGamesRoutes);
 apiRouter.use('/health', healthRoutes);
+
+app.get('/api/v1/openapi.json', (req, res) => res.json(swaggerSpec));
+app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api/v1', apiRouter);
 

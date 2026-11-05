@@ -81,3 +81,7 @@ psql -U postgres -d fantasydb -f path/to/seed.sql
 - [Backend System Architecture & Design](./ARCHITECTURE.md)
 - [API Reference](./API_REFERENCE.md)
 - [Contribution Guidelines](./CONTRIBUTING.md)
+
+## Interactive API Docs
+
+With the server running, open `http://localhost:3000/api/v1/docs` for Swagger UI or `http://localhost:3000/api/v1/openapi.json` for the generated OpenAPI document. Route annotations in `src/routes/` are the source for both.

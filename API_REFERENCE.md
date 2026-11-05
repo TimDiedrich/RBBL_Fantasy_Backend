@@ -1,6 +1,6 @@
 # API Reference
 
-This document describes the API currently implemented by this repository. HTTP routes are mounted at `/api/v1`. Successful domain responses use a `data` envelope; game-week metadata is returned separately in `meta`. The health endpoint keeps its top-level operational response shape.
+This document provides usage notes for the API mounted at `/api/v1`. The OpenAPI specification is generated from route annotations and is the canonical machine-readable contract: [OpenAPI JSON](http://localhost:3000/api/v1/openapi.json). Successful domain responses use a `data` envelope; game-week metadata is returned separately in `meta`. The health endpoint keeps its top-level operational response shape.
 
 ## Base URL and authentication
 
