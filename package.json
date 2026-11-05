@@ -11,10 +11,11 @@
     "predev:worker": "cd \"../Python RBBL Scraping\" && .venv\\Scripts\\pip.exe install -q -r requirements.txt",
     "dev:worker": "cd \"../Python RBBL Scraping\" && .venv\\Scripts\\python.exe worker.py",
     "dev": "concurrently -k -n \"SERVER,BOT,WORKER\" -c \"cyan,magenta,yellow\" \"npm run dev:server\" \"npm run dev:bot\" \"npm run dev:worker\"",
-    "db:reset": "chcp 65001 >nul && psql -U postgres -d postgres -f src/config/SQL/init.sql"
+    "db:reset": "chcp 65001 >nul && psql -U postgres -d postgres -f src/config/SQL/init.sql",
+    "test_db:reset": "chcp 65001 >nul && psql -U postgres -d rbbl_fantasy_test -f src/config/SQL/init.sql"
   },
   "keywords": [],
-  "author": "",
+  "author": "Tim Diedrich",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
@@ -32,6 +33,8 @@
     "node-cron": "^4.6.0",
     "pg": "^8.22.0",
     "socket.io": "^4.8.3",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
     "validator": "^13.15.35"
   },
   "devDependencies": {

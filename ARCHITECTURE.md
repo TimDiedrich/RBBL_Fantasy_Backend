@@ -227,7 +227,7 @@ erDiagram
 # TODO
 ## REST API Endpoint Specifications
 
-All API endpoints are prefixed with `/api`. Authentication is handled via Bearer Tokens in the `Authorization` header.
+All API endpoints are prefixed with `/api/v1`. Authentication is handled via Bearer Tokens in the `Authorization` header.
 
 ### 1. Authentication & Users
 
