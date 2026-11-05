@@ -2,7 +2,7 @@ const path = require('path');
 
 require('dotenv').config({
     path: path.resolve(__dirname, '.env.test'),
-    override: true
+    override: false
 });
 
-console.log('[Jest Env] Loaded environment from .env.test. Target DB URL:', process.env.DATABASE_URL);
+console.log('[Jest Env] Test environment loaded.');

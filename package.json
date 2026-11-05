@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "jest --detectOpenHandles --forceExit",
+    "openapi:validate": "node scripts/validate-openapi.cjs",
     "test:openapi": "node scripts/validate-openapi.cjs && jest --runInBand src/__tests__/openapi.test.js",
+    "db:test:reset": "node scripts/reset-test-db.cjs",
     "start": "node src/server.js",
     "dev:server": "nodemon src/server.js",
     "dev:bot": "node DevSentinel.js",
@@ -13,7 +15,7 @@
     "dev:worker": "cd \"../Python RBBL Scraping\" && .venv\\Scripts\\python.exe worker.py",
     "dev": "concurrently -k -n \"SERVER,BOT,WORKER\" -c \"cyan,magenta,yellow\" \"npm run dev:server\" \"npm run dev:bot\" \"npm run dev:worker\"",
     "db:reset": "chcp 65001 >nul && psql -U postgres -d postgres -f src/config/SQL/init.sql",
-    "test_db:reset": "chcp 65001 >nul && psql -U postgres -d rbbl_fantasy_test -f src/config/SQL/init.sql"
+    "test_db:reset": "node scripts/reset-test-db.cjs"
   },
   "keywords": [],
   "author": "Tim Diedrich",
