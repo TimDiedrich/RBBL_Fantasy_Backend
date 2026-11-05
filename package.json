@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest --detectOpenHandles --forceExit",
+    "test:openapi": "node scripts/validate-openapi.cjs && jest --runInBand src/__tests__/openapi.test.js",
     "start": "node src/server.js",
     "dev:server": "nodemon src/server.js",
     "dev:bot": "node DevSentinel.js",
