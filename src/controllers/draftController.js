@@ -3,6 +3,7 @@ const db = require('../config/db');
 const asyncHandler = require('../middlewares/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const sendData = require('../utils/sendData');
+const { requireLeagueMember } = require('../services/authorizationService');
 
 const getDraftOrder = asyncHandler(async(req, res) => {
     const userId = req.user?.id;
@@ -17,14 +18,7 @@ const getDraftOrder = asyncHandler(async(req, res) => {
     }
 
     // 1. Authorization: Ensure requesting user belongs to this league
-    const memberCheckQuery = `
-        SELECT 1 FROM league_members 
-        WHERE league_id = $1 AND user_id = $2;
-    `;
-    const { rowCount } = await db.query(memberCheckQuery, [leagueId, userId]);
-    if (rowCount === 0) {
-        throw ApiError.forbidden('You are not a member of this league.');
-    }
+    await requireLeagueMember(leagueId, userId);
 
     const getQuery = `
     SELECT

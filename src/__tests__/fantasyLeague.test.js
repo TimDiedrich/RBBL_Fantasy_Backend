@@ -4,8 +4,10 @@ const { app } = require('../app');
 describe('Fantasy League End-to-End Integration Tests', () => {
   let userOneToken;
   let userTwoToken;
+  let outsiderToken;
   let createdLeagueId;
   let leagueInviteCode;
+  let createdTeamId;
 
   // Setup: Register two unique users so we can test league creation and joining
   beforeAll(async () => {
@@ -31,6 +33,15 @@ describe('Fantasy League End-to-End Integration Tests', () => {
         password: 'Arandompassword23!'
       });
     userTwoToken = user2Res.body.data.token;
+
+    const outsiderRes = await request(app)
+      .post('/api/v1/auth/register')
+      .send({
+        username: `outsider_${unique}`,
+        email: `outsider_${unique}@example.com`,
+        password: 'Arandompassword23!'
+      });
+    outsiderToken = outsiderRes.body.data.token;
   });
 
   describe('POST /api/v1/fantasy-leagues', () => {
@@ -130,6 +141,84 @@ describe('Fantasy League End-to-End Integration Tests', () => {
       expect(response.body.data).toHaveProperty('commissioner_username');
       expect(response.body.data).toHaveProperty('settings');
       expect(response.body.data.settings).toHaveProperty('max_roster_size');
+    });
+  });
+
+  describe('League and team authorization', () => {
+    it('should deny league data to authenticated nonmembers', async () => {
+      const protectedPaths = [
+        `/api/v1/fantasy-leagues/${createdLeagueId}`,
+        `/api/v1/fantasy-leagues/${createdLeagueId}/players`,
+        `/api/v1/fantasy-leagues/${createdLeagueId}/standings`,
+        `/api/v1/fantasy-leagues/${createdLeagueId}/settings`,
+        `/api/v1/fantasy-leagues/${createdLeagueId}/draft-order`
+      ];
+
+      for (const path of protectedPaths) {
+        const response = await request(app)
+          .get(path)
+          .set('Authorization', `Bearer ${outsiderToken}`);
+
+        expect(response.status).toBe(403);
+        expect(response.body.error.code).toBe('FORBIDDEN');
+      }
+    });
+
+    it('should deny league updates to a member who is not the commissioner', async () => {
+      const response = await request(app)
+        .patch(`/api/v1/fantasy-leagues/${createdLeagueId}`)
+        .set('Authorization', `Bearer ${userTwoToken}`)
+        .send({ league_name: 'Unauthorized_Update' });
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe('FORBIDDEN');
+    });
+
+    it('should allow a member to create one team in the league', async () => {
+      const response = await request(app)
+        .post('/api/v1/fantasy-teams')
+        .set('Authorization', `Bearer ${userTwoToken}`)
+        .send({ league_id: createdLeagueId, team_name: 'Member_Team' });
+
+      expect(response.status).toBe(201);
+      expect(response.body.data).toHaveProperty('league_id', createdLeagueId);
+      createdTeamId = response.body.data.id;
+    });
+
+    it('should deny team creation to authenticated nonmembers', async () => {
+      const response = await request(app)
+        .post('/api/v1/fantasy-teams')
+        .set('Authorization', `Bearer ${outsiderToken}`)
+        .send({ league_id: createdLeagueId, team_name: 'Outsider_Team' });
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe('FORBIDDEN');
+    });
+
+    it('should allow league members to view another member roster, but deny nonmembers', async () => {
+      const memberResponse = await request(app)
+        .get(`/api/v1/fantasy-teams/${createdTeamId}/roster`)
+        .set('Authorization', `Bearer ${userOneToken}`);
+
+      expect(memberResponse.status).toBe(200);
+      expect(memberResponse.body.data).toEqual([]);
+
+      const outsiderResponse = await request(app)
+        .get(`/api/v1/fantasy-teams/${createdTeamId}/roster`)
+        .set('Authorization', `Bearer ${outsiderToken}`);
+
+      expect(outsiderResponse.status).toBe(403);
+      expect(outsiderResponse.body.error.code).toBe('FORBIDDEN');
+    });
+
+    it('should deny roster mutation by a league member who does not own the team', async () => {
+      const response = await request(app)
+        .put(`/api/v1/fantasy-teams/${createdTeamId}/roster`)
+        .set('Authorization', `Bearer ${userOneToken}`)
+        .send([{ roster_id: 999, player_id: 999, is_starter: false }]);
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe('FORBIDDEN');
     });
   });
 

@@ -28,10 +28,11 @@ Registration and login return a token that expires after seven days. The authent
 | `POST` | `/fantasy-leagues` | Bearer | Create a league |
 | `GET` | `/fantasy-leagues` | Bearer | List leagues commissioned by the caller |
 | `GET` | `/fantasy-leagues/{leagueId}` | Bearer | Get league details and settings |
+| `GET` | `/fantasy-leagues/{leagueId}` | Bearer, league member | Get league details and settings |
 | `PATCH` | `/fantasy-leagues/{leagueId}` | Bearer, commissioner | Update league fields and optionally schedule a draft |
-| `POST` | `/fantasy-teams` | Bearer | Create a fantasy team |
+| `POST` | `/fantasy-teams` | Bearer, league member | Create a fantasy team |
 | `GET` | `/fantasy-teams` | Bearer | List the caller's fantasy teams |
-| `GET` | `/fantasy-teams/{teamId}/roster` | Bearer | Get a team's roster |
+| `GET` | `/fantasy-teams/{teamId}/roster` | Bearer, league member | Get a team's roster |
 | `POST` | `/fantasy-teams/{teamId}/roster` | Bearer, team owner | Add a player to a roster |
 | `PUT` | `/fantasy-teams/{teamId}/roster` | Bearer, team owner | Replace starter flags for submitted roster entries |
 | `GET` | `/fantasy-leagues/{leagueId}/standings` | Bearer | Get league standings |
@@ -87,7 +88,7 @@ Registration and login are limited per IP over 15 minutes. In production, the li
 
 `GET /fantasy-leagues` returns `{ "data": [...] }`. This query returns leagues where the caller is commissioner; use `GET /fantasy-leagues/memberships` for memberships.
 
-`GET /fantasy-leagues/{leagueId}` returns `{ "data": { ... } }` with league metadata, `commissioner_username`, and a nested `settings` object. The handler requires a valid token but does not check league membership.
+`GET /fantasy-leagues/{leagueId}` returns `{ "data": { ... } }` with league metadata, `commissioner_username`, and a nested `settings` object. The caller must be a member of the league.
 
 `PATCH /fantasy-leagues/{leagueId}` accepts any subset of `league_name`, `draft_status`, `draft_date`, and `needs_new_invite_code`. Only the commissioner may update the league. Setting `draft_status` to `SCHEDULED` together with `draft_date` generates a randomized draft order and schedules the draft room. Success returns the updated league object inside `data`. Supported `draft_status` values are `PREDRAFT`, `SCHEDULED`, `DRAFTING`, `POSTDRAFT`, and `COMPLETED`.
 
@@ -99,15 +100,15 @@ Registration and login are limited per IP over 15 minutes. In production, the li
 
 ### Fantasy teams and rosters
 
-`POST /fantasy-teams` accepts `{ "league_id": 1, "team_name": "My_Team" }` and returns `{ "data": { ... } }` with the created team row (`201`). Team names must be 3-30 letters, numbers, or underscores. The handler requires authentication but does not check league membership.
+`POST /fantasy-teams` accepts `{ "league_id": 1, "team_name": "My_Team" }` and returns `{ "data": { ... } }` with the created team row (`201`). Team names must be 3-30 letters, numbers, or underscores. The caller must be a league member; the league's configured team capacity is enforced, and the database allows one team per user per league.
 
 `GET /fantasy-teams` returns `{ "data": [...] }` for teams owned by the caller.
 
-`GET /fantasy-teams/{teamId}/roster` returns `{ "data": [...] }`. Each row includes player details, `real_team_id`, `is_starter`, and `roster_id`. The handler requires authentication but does not check that the caller owns the requested team.
+`GET /fantasy-teams/{teamId}/roster` returns `{ "data": [...] }`. Each row includes player details, `real_team_id`, `is_starter`, and `roster_id`. Any member of the team's league may view the roster.
 
 `POST /fantasy-teams/{teamId}/roster` accepts `{ "player_id": 10 }`. The caller must own the team, and a player already rostered by a team in the same league cannot be added again. Success is `201` with `{ "data": { "message": "...", "roster": { "id", "fantasy_team_id", "player_id", "is_starter" } } }`.
 
-`GET /fantasy-leagues/{leagueId}/players?undrafted=true` returns an array of active, undrafted player rows. The handler requires authentication but does not check league membership.
+`GET /fantasy-leagues/{leagueId}/players?undrafted=true` returns an array of active, undrafted player rows. The caller must be a member of the league.
 
 `PUT /fantasy-teams/{teamId}/roster` accepts a non-empty JSON array. Each entry must include `roster_id`, `player_id`, and `is_starter` boolean. Success returns `{ "data": [...] }` with the updated roster:
 
@@ -121,11 +122,11 @@ All entries are applied to the team identified by `{teamId}`. The caller must ow
 
 ### Players, standings, settings, and draft order
 
-`GET /fantasy-leagues/{leagueId}/players` returns `{ "data": [...] }` with active fantasy-player rows. Add `?undrafted=true` to limit the result to undrafted players. The handler requires a token but does not verify league membership.
+`GET /fantasy-leagues/{leagueId}/players` returns `{ "data": [...] }` with active fantasy-player rows. Add `?undrafted=true` to limit the result to undrafted players. The caller must be a member of the league.
 
-`GET /fantasy-leagues/{leagueId}/standings` returns `{ "data": [...] }`. Each row contains `team_id`, `team_name`, `wins`, `losses`, `total_points`, and `rank`.
+`GET /fantasy-leagues/{leagueId}/standings` returns `{ "data": [...] }`. Each row contains `team_id`, `team_name`, `wins`, `losses`, `total_points`, and `rank`. The caller must be a member of the league.
 
-`GET /fantasy-leagues/{leagueId}/settings` returns `{ "data": { ... } }` with `league_id`, `max_lineup_points`, `max_roster_size`, scoring values, and bonuses. The handler requires authentication but does not check league membership.
+`GET /fantasy-leagues/{leagueId}/settings` returns `{ "data": { ... } }` with `league_id`, `max_lineup_points`, `max_roster_size`, scoring values, and bonuses. The caller must be a member of the league.
 
 `GET /fantasy-leagues/{leagueId}/draft-order` returns `{ "data": [...] }` with rows shaped like `{ "league_id", "fantasy_team_id", "team_name", "draft_position" }`. The caller must be a league member.
 
@@ -168,11 +169,11 @@ Socket.IO uses the same server origin and the default namespace. A JWT is requir
 | Server to room | `draft:pick_made` | Pick details and, unless complete, next-turn details |
 | Server to room | `draft:completed` | `{ "message": "The draft has ended!" }` |
 
-The room-state payload contains draft status, scheduled time, current turn metadata, and available players. Pick deadlines and event payload details are currently defined in `src/services/draftService.js` and may evolve with that implementation.
+Only league members may join a draft room, and only the commissioner may start the draft. The room-state payload contains draft status, scheduled time, current turn metadata, and available players. Pick deadlines and event payload details are currently defined in `src/services/draftService.js` and may evolve with that implementation.
 
 ## Contract caveats
 
 - Successful domain HTTP responses use `data`; game responses also use `meta`. Health and error responses are intentionally not wrapped. Socket.IO events retain their event-specific payloads.
-- Authentication is not equivalent to authorization. Several league, team, player, and settings handlers only verify that a token is present and do not verify league membership or team ownership; the individual endpoint notes above call out these cases.
-- Draft socket handlers currently accept authenticated connections without checking league membership when joining a room or commissioner status when starting a draft. Also, the JWT middleware stores the claim as `socket.user.userId`, while the pick handler reads `socket.user.id`; manual picks may therefore fail the turn/ownership check. Verify or fix these behaviors before treating the socket event descriptions as a stable client contract.
+- Authentication is not equivalent to authorization. League-scoped reads require membership; league updates and draft starts require the commissioner; roster writes require the team owner, while roster reads are available to league members.
+- Draft sockets use the JWT `userId` claim for manual-pick ownership checks.
 - Response envelopes are not fully consistent: some endpoints return arrays or rows directly, while others wrap results in an object. Examples and shapes above reflect the current handlers.

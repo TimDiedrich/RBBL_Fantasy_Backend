@@ -2,6 +2,10 @@ const db = require('../config/db');
 const asyncHandler = require('../middlewares/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const sendData = require('../utils/sendData');
+const {
+    requireTeamOwner,
+    requireTeamLeagueMember
+} = require('../services/authorizationService');
 
 const addToRoster = asyncHandler(async(req, res) => {
     const {player_id} = req.body;
@@ -18,17 +22,18 @@ const addToRoster = asyncHandler(async(req, res) => {
         throw ApiError.badRequest('Valid team ID and player_id are required.');
     }
 
-    const teamCheckQuery =`
-        SELECT id, league_id FROM fantasy_teams
-        WHERE id = $1 AND user_id = $2;
-    `;
-    const teamResult = await db.query(teamCheckQuery, [teamIdNum, userId]);
+    //const teamCheckQuery =`
+    const team = await requireTeamOwner(teamIdNum, userId);
+    const leagueId = Number(team.league_id);
 
-    if (teamResult.rows.length === 0) {
-        throw ApiError.forbidden('You do not own this fantasy team or it does not exist.');
+    const playerResult = await db.query(
+        `SELECT 1 FROM fantasy_players WHERE id = $1 AND league_id = $2;`,
+        [playerIdNum, leagueId]
+    );
+    if (playerResult.rowCount === 0) {
+        throw ApiError.notFound('Player not found in this league.');
     }
-
-    const { league_id } = teamResult.rows[0];
+    //const playerCheck = await db.query(playerCheckQuery, [playerIdNum, leagueId]);
 
     const playerCheckQuery = `
         SELECT r.id 
@@ -67,6 +72,8 @@ const getFantasyTeamRoster = asyncHandler(async (req, res) => {
     if (isNaN(teamIdNum)) {
         throw ApiError.badRequest('Valid team ID is required.');
     }
+
+    await requireTeamLeagueMember(teamIdNum, userId);
 
     const getQuery = `
         SELECT 
@@ -116,13 +123,8 @@ const saveRoster = asyncHandler(async(req, res) => {
     try {
         await client.query('BEGIN');
 
-        const teamOwnerCheck = await client.query(
-            `SELECT user_id FROM fantasy_teams WHERE id = $1;`, [teamIdNum]
-        );
-
-        if(teamOwnerCheck.rows.length === 0 || teamOwnerCheck.rows[0].user_id !== userId) {
-            throw ApiError.forbidden('You do not have permission to modify this team.');
-        }
+        //const teamOwnerCheck = await client.query(
+        await requireTeamOwner(teamIdNum, userId, client);
 
         const ids = [];
         const isStarters = [];

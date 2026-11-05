@@ -2,6 +2,7 @@ const db = require('../config/db');
 const asyncHandler = require('../middlewares/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const sendData = require('../utils/sendData');
+const { requireLeagueMember } = require('../services/authorizationService');
 
 const getLeagueSettings = asyncHandler(async(req, res) => {
     const userId = req.user?.id;
@@ -14,6 +15,7 @@ const getLeagueSettings = asyncHandler(async(req, res) => {
     if (isNaN(leagueId)) {
         throw ApiError.badRequest('Invalid league ID.');
     }
+    await requireLeagueMember(leagueId, userId);
 
     const getQuery = `
     SELECT

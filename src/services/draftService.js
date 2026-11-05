@@ -1,4 +1,9 @@
 const db  = require('../config/db');
+const ApiError = require('../utils/ApiError');
+const {
+    requireLeagueMember,
+    requireLeagueCommissioner
+} = require('./authorizationService');
 
 //active Node.js timers: { [leagueId]; TimeoutObject }
 const activeTimers = {};
@@ -586,15 +591,23 @@ async function getEligibleClassesForTeam(client, fantasyTeamId, maxRosterSize = 
  */
 module.exports = function handleDraftSockets(io, socket) {
     socket.on('draft:join_room', async ({ leagueId }) => {
-        socket.join(`draft_${leagueId}`);
-        console.log(`User ${socket.user.userId} joined room draft_${leagueId}`);
-
         try {
-            const roomState = await getDraftRoomState(leagueId);
+            const parsedLeagueId = Number(leagueId);
+            if (!Number.isInteger(parsedLeagueId) || parsedLeagueId < 1) {
+                throw ApiError.badRequest('Valid league ID is required.');
+            }
+
+            await requireLeagueMember(parsedLeagueId, socket.user.userId);
+            socket.join(`draft_${parsedLeagueId}`);
+            console.log(`User ${socket.user.userId} joined room draft_${parsedLeagueId}`);
+
+            const roomState = await getDraftRoomState(parsedLeagueId);
 
             socket.emit('draft:room_state', roomState);
         } catch (err) {
-            socket.emit('draft:error', { message: err.message });
+            socket.emit('draft:error', {
+                message: err.isOperational ? err.message : 'Draft action could not be completed.'
+            });
         }
     });
 
@@ -608,7 +621,7 @@ module.exports = function handleDraftSockets(io, socket) {
             const {leagueId, fantasyPlayerId } = data;
             const result = await draftService.processPick({
                 leagueId,
-                userId: socket.user.id, // from JWT middleware
+                userId: socket.user.userId,
                 fantasyPlayerId,
                 isAutoPick: false,
                 io
@@ -617,16 +630,26 @@ module.exports = function handleDraftSockets(io, socket) {
             // Optional acknowledge back to emitting sockete
             socket.emit('draft:pick_success', result);
         } catch (err) {
-            socket.emit('draft:error', { message: err.message });
+            socket.emit('draft:error', {
+                message: err.isOperational ? err.message : 'Draft action could not be completed.'
+            });
         }
     });
 
     // admin starts draft
     socket.on('draft:start', async ({ leagueId }) => {
         try {
-            await draftService.startDraft(leagueId, io);
+            const parsedLeagueId = Number(leagueId);
+            if (!Number.isInteger(parsedLeagueId) || parsedLeagueId < 1) {
+                throw ApiError.badRequest('Valid league ID is required.');
+            }
+
+            await requireLeagueCommissioner(parsedLeagueId, socket.user.userId);
+            await draftService.startDraft(parsedLeagueId, io);
         } catch (err) {
-            socket.emit('draft:error', { message: err.message });
+            socket.emit('draft:error', {
+                message: err.isOperational ? err.message : 'Draft action could not be completed.'
+            });
         }
     });
 };

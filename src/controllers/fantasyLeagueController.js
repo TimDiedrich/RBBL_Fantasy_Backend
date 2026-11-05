@@ -3,6 +3,7 @@ const asyncHandler = require('../middlewares/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const sendData = require('../utils/sendData');
 const { generateDraftOrder } = require('../services/draftService');
+const { requireLeagueMember } = require('../services/authorizationService');
 
 const crypto = require('crypto');
 
@@ -115,6 +116,8 @@ const getLeagueById = asyncHandler(async(req, res) => {
     if (isNaN(leagueId)) {
         throw ApiError.badRequest('Invalid league ID.');
     }
+
+    await requireLeagueMember(leagueId, userId);
 
     const getQuery = `
             SELECT
@@ -343,16 +346,7 @@ const getAllMembers = asyncHandler(async(req, res) => {
         throw ApiError.badRequest('Invalid league ID.');
     }
 
-    // 1. Authorization Check: Ensure the requesting user belongs to the requested league
-    const membershipCheckQuery = `
-        SELECT 1 FROM league_members 
-        WHERE league_id = $1 AND user_id = $2;
-    `;
-    const { rowCount } = await db.query(membershipCheckQuery, [leagueId, userId]);
-    
-    if (rowCount === 0) {
-        throw ApiError.forbidden('You are not a member of this league.');
-    }
+    await requireLeagueMember(leagueId, userId);
     
     const getQuery = `
     SELECT 
