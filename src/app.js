@@ -45,10 +45,15 @@ app.set('io', io);
 // SOCKET AUTHENTICATION MIDDLEWARE
 io.use((socket, next) =>{
     const token = socket.handshake.auth.token || socket.handshake.headers['authorization'];
+    const createAuthError = (message) => {
+        const error = new Error(message);
+        error.data = { code: 'UNAUTHENTICATED', message };
+        return error;
+    };
 
     if (!token) {
         console.error('[Socket Auth] Missing token in handshake');
-        return next(new Error('Authentication error: Token missing'));
+        return next(createAuthError('Access token is required.'));
     }
 
     try {
@@ -61,7 +66,7 @@ io.use((socket, next) =>{
         next();
     } catch (err) {
         console.error('[Socket Auth Failed]:', err.message);
-        next(new Error('Authentication error: Invalid or expired token'));
+        next(createAuthError('Access token is invalid or expired.'));
     }
 });
 

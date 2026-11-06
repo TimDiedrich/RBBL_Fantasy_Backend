@@ -156,21 +156,50 @@ All HTTP errors use the same structure. The HTTP status code is authoritative; `
 
 Common codes are `BAD_REQUEST` (`400`), `UNAUTHENTICATED` (`401`), `FORBIDDEN` (`403`), `NOT_FOUND` (`404`), `CONFLICT` (`409`), `TOO_MANY_REQUESTS` (`429`), and `INTERNAL_ERROR` (`500`). Invalid or missing Bearer tokens return `401`. Rate limits return `429`. Unexpected server and database errors return a generic message; internal details are logged, not sent to clients. Health-check responses retain their operational top-level shape.
 
-## Draft Socket.IO events
+## Draft Socket.IO Contract
 
-Socket.IO uses the same server origin and the default namespace. A JWT is required at connection time, either as `auth.token` or in the `Authorization` handshake header. The Socket.IO handshake accepts a token with or without the `Bearer ` prefix.
+Connect to the same origin on the default namespace (`/`). Authenticate at connection time using `auth.token`; a raw JWT or a `Bearer `-prefixed token is accepted. The `Authorization` handshake header is also accepted. Authentication failures reject the connection; the client's `connect_error` includes `data: { "code", "message" }`.
 
-| Direction | Event | Data / behavior |
-| --- | --- | --- |
-| Client to server | `draft:join_room` | `{ "leagueId": 1 }`; joins `draft_{leagueId}` and receives `draft:room_state` or `draft:error` |
-| Client to server | `draft:leave_room` | `{ "leagueId": 1 }`; leaves the league room |
-| Client to server | `draft:make_pick` | `{ "leagueId": 1, "fantasyPlayerId": 10 }`; server responds with `draft:pick_success` or `draft:error` |
-| Client to server | `draft:start` | `{ "leagueId": 1 }`; starts the draft and broadcasts `draft:started` or returns `draft:error` to the requester |
-| Server to room | `draft:pick_made` | Pick details and, unless complete, next-turn details |
-| Server to room | `draft:completed` | `{ "message": "The draft has ended!" }` |
+Every client command accepts an optional Socket.IO acknowledgement callback. New clients should use the callback. Successful acknowledgements use `{ "ok": true, "data": ... }`; failures use `{ "ok": false, "error": { "code": "...", "message": "..." } }`. Failures are also emitted to the caller as `draft:error` with `{ "code", "message" }` for compatibility with event-based listeners.
 
-Only league members may join a draft room, and only the commissioner may start the draft. The room-state payload contains draft status, scheduled time, current turn metadata, and available players. Pick deadlines and event payload details are currently defined in `src/services/draftService.js` and may evolve with that implementation.
-Only league members may join a draft room, and only the commissioner may start the draft. Room state uses `NOT_STARTED`, `SCHEDULED`, `PAUSED`, `IN_PROGRESS`, or `COMPLETED`; this is distinct from league `draft_status`, which uses `PREDRAFT`, `SCHEDULED`, `DRAFTING`, `POSTDRAFT`, or `COMPLETED`. The room-state payload also contains scheduled time, current turn metadata, and available players. Pick deadlines and event payload details are currently defined in `src/services/draftService.js` and may evolve with that implementation.
+### Client Events
+
+| Event | Payload | Authorization | Acknowledgement data |
+| --- | --- | --- | --- |
+| `draft:join_room` | `{ "leagueId": 1 }` | League member | Full `draft:room_state` payload; also emitted as `draft:room_state` to this socket |
+| `draft:leave_room` | `{ "leagueId": 1 }` | Authenticated connection | `{ "leagueId": 1 }` |
+| `draft:make_pick` | `{ "leagueId": 1, "fantasyPlayerId": 10 }` | Must own the team whose turn is active | Pick result; also emitted as `draft:pick_success` to the caller |
+| `draft:start` | `{ "leagueId": 1 }` | League commissioner | `draft:started` payload; it is also broadcast to the draft room |
+
+IDs must be positive integers. Join the room before starting or observing a draft: `draft:started` and `draft:pick_made` are room broadcasts, not acknowledgements to a socket outside that room.
+
+### Server Events
+
+`draft:room_state` payload:
+
+```json
+{
+  "leagueId": 12,
+  "status": "NOT_STARTED",
+  "scheduledFor": null,
+  "currentTurn": {
+    "round": 1,
+    "pickNumber": 1,
+    "teamId": null,
+    "teamName": null,
+    "pickDeadline": null,
+    "timePerPickSeconds": 90,
+    "eligibleSportClasses": [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5]
+  },
+  "availablePlayers": []
+}
+```
+
+Room `status` values are `NOT_STARTED`, `SCHEDULED`, `PAUSED`, `IN_PROGRESS`, and `COMPLETED`. League `draftStatus` values are `PREDRAFT`, `SCHEDULED`, `DRAFTING`, `POSTDRAFT`, and `COMPLETED`.
+
+`draft:started` contains `leagueId`, `currentRound`, `currentPickNumber`, `currentFantasyTeamId`, `pickDeadline`, and `eligibleSportClasses`. `draft:pick_made` contains `leagueId` and `pick`, plus `nextTurn` when another turn remains. The final pick has `status: "COMPLETED"` and is followed by `draft:completed` with `{ "leagueId": 12, "message": "The draft has ended!" }`.
+
+Error codes follow the HTTP vocabulary where applicable: `BAD_REQUEST`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, and `INTERNAL_ERROR`. Do not parse error text to decide program behavior; use `error.code` and show `error.message` to the user.
 
 ## Contract caveats
 

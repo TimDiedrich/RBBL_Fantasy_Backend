@@ -5,6 +5,11 @@ const {
     requireLeagueCommissioner
 } = require('./authorizationService');
 const { LEAGUE_DRAFT_STATUSES, DRAFT_ROOM_STATUSES } = require('../constants/draftStatuses');
+const {
+    requirePositiveInteger,
+    acknowledgeSuccess,
+    sendSocketError
+} = require('../utils/socketResponse');
 
 //active Node.js timers: { [leagueId]; TimeoutObject }
 const activeTimers = {};
@@ -32,7 +37,7 @@ const draftService = {
         );
 
         if (!roomRes.rows.length) {
-            throw new Error('Draft room not found');
+            throw ApiError.notFound('Draft room not found.');
         }
 
         const room = roomRes.rows[0];
@@ -47,7 +52,7 @@ const draftService = {
         );
 
         if(!orderRes.rows.length) {
-            throw new Error('Draft order has not been generated for this league');
+            throw ApiError.conflict('Draft order has not been generated for this league.');
         }
 
         const draftOrder = orderRes.rows;
@@ -85,15 +90,18 @@ const draftService = {
         const firstTeamEligibleClasses = await getEligibleClassesForTeam(client, firstTeamId, room.max_roster_size || 10);
 
         // Broadcast start event & start server timeer
-        io.to(`draft_${leagueId}`).emit('draft:started', {
+        const startedPayload = {
+            leagueId,
             currentRound: 1,
             currentPickNumber: 1,
             currentFantasyTeamId: firstTeamId,
             pickDeadline: pickDeadline.toISOString(),
             eligibleSportClasses: firstTeamEligibleClasses
-        });
+        };
+        io.to(`draft_${leagueId}`).emit('draft:started', startedPayload);
 
         this.setTurnTimer(leagueId, timePerPickSec * 1000, io);
+        return startedPayload;
         } catch(err) {
             await client.query('ROLLBACK');
             throw err;
@@ -121,7 +129,7 @@ const draftService = {
 
             const room = roomRes.rows[0];
             if (!room || room.status !== DRAFT_ROOM_STATUSES.IN_PROGRESS) {
-            throw new Error('Draft is not active');
+                throw ApiError.conflict('Draft is not active.');
             }
 
             if(!isAutoPick) {
@@ -132,8 +140,12 @@ const draftService = {
                     [leagueId, userId]
                 );
 
-                if(!teamRes.rows.length || teamRes.rows[0].id !== room.current_fantasy_team_id) {
-                    throw new Error('It is not your turn to pick');
+                if (!teamRes.rows.length) {
+                    throw ApiError.forbidden('You do not have a team in this league.');
+                }
+
+                if (Number(teamRes.rows[0].id) !== Number(room.current_fantasy_team_id)) {
+                    throw ApiError.forbidden('It is not your turn to pick.');
                 }
             }
 
@@ -147,12 +159,12 @@ const draftService = {
             );
 
             if(!playerRes.rows.length){
-                throw new Error('Player not found in this league.');
+                throw ApiError.notFound('Player not found in this league.');
             }
 
             const player = playerRes.rows[0];
             if(player.is_drafted) {
-                throw new Error(`${player.player_name} has already been drafted`);
+                throw ApiError.conflict(`${player.player_name} has already been drafted.`);
             }
 
             // Record pick in draft_picks
@@ -215,6 +227,7 @@ const draftService = {
                 await client.query('COMMIT');
 
                 const payload = {
+                    leagueId,
                     pick: {
                         round: room.current_round,
                         pickNumber: room.current_pick_number,
@@ -228,7 +241,10 @@ const draftService = {
 
                 if (io) {
                     io.to(`draft_${leagueId}`).emit('draft:pick_made', payload);
-                    io.to(`draft_${leagueId}`).emit('draft:completed', { message: 'The draft has ended!' });
+                    io.to(`draft_${leagueId}`).emit('draft:completed', {
+                        leagueId,
+                        message: 'The draft has ended!'
+                    });
                 }
 
                 return payload;
@@ -257,6 +273,7 @@ const draftService = {
             const nextTeamEligibleClasses = await getEligibleClassesForTeam(client, nextTeamId, maxRosterSize);
             
             const pickPayload = {
+                leagueId,
                 pick: {
                     round: room.current_round,
                     pickNumber: room.current_pick_number,
@@ -417,7 +434,7 @@ async function getDraftRoomState(leagueId) {
         SELECT 
             dr.league_id AS leagueId,
             dr.status AS status,
-            dr.scheduled_for AS scheduled_for,
+            dr.scheduled_for AS "scheduledFor",
             dr.current_round AS currentRound,
             dr.current_pick_number AS currentPickNumber,
             dr.current_fantasy_team_id AS currentFantasyTeamId,
@@ -434,7 +451,7 @@ async function getDraftRoomState(leagueId) {
         // Default draft room metadata if no active draft room exists yet
         let draftInfo = {
             status: DRAFT_ROOM_STATUSES.NOT_STARTED,
-            scheduled_for: null,
+            scheduledFor: null,
             currentRound: 1,
             currentPickNumber: 1,
             currentFantasyTeamId: null,
@@ -472,8 +489,9 @@ async function getDraftRoomState(leagueId) {
         const playersResult = await db.query(playersQuery, [leagueId]);
 
         return {
+            leagueId: Number(leagueId),
             status: draftInfo.status,
-            scheduled_for: draftInfo.scheduled_for,
+            scheduledFor: draftInfo.scheduledFor,
             currentTurn: {
                 round: draftInfo.currentRound,
                 pickNumber: draftInfo.currentPickNumber,
@@ -591,35 +609,38 @@ async function getEligibleClassesForTeam(client, fantasyTeamId, maxRosterSize = 
  * Export this function directly satisfies server.js -> draftService(io, socket)
  */
 module.exports = function handleDraftSockets(io, socket) {
-    socket.on('draft:join_room', async ({ leagueId }) => {
+    socket.on('draft:join_room', async (payload, acknowledge) => {
         try {
-            const parsedLeagueId = Number(leagueId);
-            if (!Number.isInteger(parsedLeagueId) || parsedLeagueId < 1) {
-                throw ApiError.badRequest('Valid league ID is required.');
-            }
+            const leagueId = requirePositiveInteger(payload?.leagueId, 'leagueId');
 
-            await requireLeagueMember(parsedLeagueId, socket.user.userId);
-            socket.join(`draft_${parsedLeagueId}`);
-            console.log(`User ${socket.user.userId} joined room draft_${parsedLeagueId}`);
+            await requireLeagueMember(leagueId, socket.user.userId);
+            const roomState = await getDraftRoomState(leagueId);
 
-            const roomState = await getDraftRoomState(parsedLeagueId);
+            await socket.join(`draft_${leagueId}`);
+            console.log(`User ${socket.user.userId} joined room draft_${leagueId}`);
 
             socket.emit('draft:room_state', roomState);
+            acknowledgeSuccess(acknowledge, roomState);
         } catch (err) {
-            socket.emit('draft:error', {
-                message: err.isOperational ? err.message : 'Draft action could not be completed.'
-            });
+            sendSocketError(socket, acknowledge, err);
         }
     });
 
-    socket.on('draft:leave_room', ({ leagueId }) => {
-        socket.leave(`draft_${leagueId}`);
-        console.log(`User ${socket.user.userId} left room draft_${leagueId}`);
+    socket.on('draft:leave_room', async (payload, acknowledge) => {
+        try {
+            const leagueId = requirePositiveInteger(payload?.leagueId, 'leagueId');
+            await socket.leave(`draft_${leagueId}`);
+            console.log(`User ${socket.user.userId} left room draft_${leagueId}`);
+            acknowledgeSuccess(acknowledge, { leagueId });
+        } catch (err) {
+            sendSocketError(socket, acknowledge, err);
+        }
     });
 
-    socket.on('draft:make_pick', async(data) => {
-        try{
-            const {leagueId, fantasyPlayerId } = data;
+    socket.on('draft:make_pick', async (payload, acknowledge) => {
+        try {
+            const leagueId = requirePositiveInteger(payload?.leagueId, 'leagueId');
+            const fantasyPlayerId = requirePositiveInteger(payload?.fantasyPlayerId, 'fantasyPlayerId');
             const result = await draftService.processPick({
                 leagueId,
                 userId: socket.user.userId,
@@ -628,29 +649,22 @@ module.exports = function handleDraftSockets(io, socket) {
                 io
             });
 
-            // Optional acknowledge back to emitting sockete
             socket.emit('draft:pick_success', result);
+            acknowledgeSuccess(acknowledge, result);
         } catch (err) {
-            socket.emit('draft:error', {
-                message: err.isOperational ? err.message : 'Draft action could not be completed.'
-            });
+            sendSocketError(socket, acknowledge, err);
         }
     });
 
-    // admin starts draft
-    socket.on('draft:start', async ({ leagueId }) => {
+    socket.on('draft:start', async (payload, acknowledge) => {
         try {
-            const parsedLeagueId = Number(leagueId);
-            if (!Number.isInteger(parsedLeagueId) || parsedLeagueId < 1) {
-                throw ApiError.badRequest('Valid league ID is required.');
-            }
+            const leagueId = requirePositiveInteger(payload?.leagueId, 'leagueId');
 
-            await requireLeagueCommissioner(parsedLeagueId, socket.user.userId);
-            await draftService.startDraft(parsedLeagueId, io);
+            await requireLeagueCommissioner(leagueId, socket.user.userId);
+            const result = await draftService.startDraft(leagueId, io);
+            acknowledgeSuccess(acknowledge, result);
         } catch (err) {
-            socket.emit('draft:error', {
-                message: err.isOperational ? err.message : 'Draft action could not be completed.'
-            });
+            sendSocketError(socket, acknowledge, err);
         }
     });
 };
